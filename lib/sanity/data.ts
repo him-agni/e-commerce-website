@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { client } from "@/sanity/lib/client";
 import {
   ALL_PRODUCTS_QUERY,
+  ASSISTANT_CATALOG_QUERY,
   CATEGORIES_QUERY,
   CATEGORY_BY_SLUG_QUERY,
   CATEGORY_SLUGS_QUERY,
@@ -68,4 +69,11 @@ export async function getProductSlugs() {
   cacheLife("minutes");
   cacheTag("products");
   return client.fetch(PRODUCT_SLUGS_QUERY);
+}
+
+export async function getAssistantCatalog() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("products");
+  return client.fetch(ASSISTANT_CATALOG_QUERY);
 }

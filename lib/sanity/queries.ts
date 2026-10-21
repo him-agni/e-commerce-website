@@ -81,3 +81,20 @@ export const ORDERS_BY_USER_QUERY = defineQuery(`*[_type == "order" && customer-
   items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },
   shippingAddress
 }`);
+
+// Compact view of the whole catalog for the shopping assistant's search (small catalog, ranked in code).
+export const ASSISTANT_CATALOG_QUERY = defineQuery(`*[_type == "product"] | order(name asc) {
+  _id,
+  name,
+  "slug": slug.current,
+  description,
+  material,
+  "image": images[0],
+  "category": category->{ title, "slug": slug.current },
+  "minPrice": math::min(variants[].price),
+  "maxPrice": math::max(variants[].price),
+  "inStock": count(variants[stock > 0]) > 0,
+  "colors": array::unique(variants[defined(color)].color),
+  "sizes": array::unique(variants[defined(size)].size),
+  "designs": array::unique(variants[defined(design)].design)
+}`);

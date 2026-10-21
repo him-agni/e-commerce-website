@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { ChatWidget } from "@/components/assistant/chat-widget";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 
@@ -13,6 +14,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <ChatWidget />
     </ClerkProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (Phase 4 verified; seed 15/18 categories)_
+_Last updated: 2026-10-21 (Phase 5 built; seed 15/18 categories)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
@@ -17,9 +17,14 @@ _Last updated: 2026-10-21 (Phase 4 verified; seed 15/18 categories)_
 - **Phase 4 (orders, webhook) done and verified live** (2026-10-21). `POST /api/webhooks/stripe` verifies the signature (raw body), handles `checkout.session.completed` and `async_payment_succeeded`, and calls `recordPaidSession` (`lib/orders.ts`): one Sanity transaction that creates the order (`order-<sessionId>`, fails if it exists, so retries/concurrent deliveries never double-decrement), upserts `customer-<clerkUserId>` (email, name, stripeCustomerId), and decrements variant stock (clamped at 0; oversold lines are logged). Then `revalidateTag("products", { expire: 0 })`. Non-2xx makes Stripe retry. `/orders` lists the signed-in user's orders (uncached read filtered by Clerk user id); account menu has a "My orders" link; `/checkout/success` links to it. Checkout sessions now use `customer_creation: "always"`.
 - **Verified:** 10 route checks (missing/bad/tampered/wrong-secret signatures, unhandled events, duplicates, unpaid, unknown session) + order-recording checks against real Stripe/Sanity (totals, shipping, customer link, idempotency incl. concurrent) + live purchase through `stripe listen`: all events `[200]`, order created, stock 5 -> 4. The `/orders` page UI has only been checked by build/type/lint (needs a signed-in session).
 - **Local webhook testing:** run `stripe listen --api-key $k --forward-to localhost:3000/api/webhooks/stripe` where `$k` is read from `.env.local` in PowerShell (`$k = (Select-String -Path .env.local -Pattern '^STRIPE_SECRET_KEY=(.*)$').Matches.Groups[1].Value`). Plain `stripe listen` used a stale saved login for another Stripe account. The printed `whsec_` goes in `STRIPE_WEBHOOK_SECRET` (same value each run). Keep `npm run dev` and `stripe listen` running together. Deployed site needs its own webhook endpoint + secret (Phase 6).
+- **Phase 5 (Gemini shopping assistant) built and tested** (2026-10-21). Floating chat widget on every `(shop)` page (`components/assistant/`), `POST /api/chat` (`app/api/chat/route.ts`) using AI SDK **v7** (`streamText`, `toUIMessageStream`, `isStepCount`; v7 differs from older docs) + `@ai-sdk/google`. Model: `gemini-3.5-flash`, falling back to `gemini-3.5-flash-lite` on 429/5xx at request start (`lib/ai/model.ts`). Gemini 2.5 models are closed to new users; 3.7/3.8 were overloaded when tested. A provider error AFTER streaming has started is not recovered (user sees partial text + "Try again").
+- Tools (`lib/ai/tools.ts`): `searchProducts` (ranking in code, `lib/ai/search.ts`: plurals, synonyms, head-noun weighting, price/category filters; whole catalog fetched via cached `getAssistantCatalog`, fine for dozens of products, revisit if the catalog grows large), `getProductDetails`, `listCategories`, `getMyOrders` (userId comes from the server's Clerk session, never from the model/browser; no shipping address returned). System prompt in `lib/ai/system-prompt.ts` (store-only, no invented policies, ignores injected instructions).
+- Safeguards: rate limit 8/min and 60/hr per user/IP (in memory per instance, `lib/ai/rate-limit.ts`), body size and 500-char message caps, history validated with `validateUIMessages`, browser `system` messages dropped, generic errors to the browser (details only in server log). Widget renders markdown through React elements (only same-site `/links`, no raw HTML).
+- **Verified:** search ranking (14+11 cases on the real catalog), live Gemini conversations through the API (search, details, off-topic refusal, prompt-extraction refusal, signed-out order question), validation + rate-limit responses, order tool for owner / signed-out / other user, browser UI on desktop and 390px (open, suggestions, cards, navigation keeps widget open, Escape + focus return, no console errors), renderer safety cases. Signed-in "where is my order" verified by the owner in the real widget (both orders listed correctly). Renderer supports paragraphs, bullets, numbered lists, bold, same-site links.
+- Seed pending still affects the assistant: it cannot find mirrors, curtains or drawer chests until `npm run seed` finishes.
 - Stack: Next.js 16.4.2 (`cacheComponents` on, so no `export const dynamic`), Tailwind v4 via `@tailwindcss/turbopack`, shadcn/ui (`base-nova`, only `button` so far).
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
-- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-4 committed and pushed 2026-10-21.
+- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-5 committed and pushed 2026-10-21.
 
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
@@ -29,16 +34,17 @@ _Last updated: 2026-10-21 (Phase 4 verified; seed 15/18 categories)_
 
 ## Waiting on the user
 1. Re-run `npm run seed` after the Unsplash hourly limit resets (about an hour after the last run) to finish the last 3 categories (drawer chests, mirrors, curtains).
-2. Later: Google AI Studio key (`GOOGLE_GENERATIVE_AI_API_KEY`) before Phase 5.
+2. (done) Google AI Studio key is set.
 3. Confirm or change the brand look (now visible on the live pages).
 
 ## Next up
-- Phase 5: Gemini shopping assistant. `/api/chat` with the Vercel AI SDK + Google provider, tool `searchProducts` (GROQ) and `getMyOrders` scoped to the Clerk user id, chat widget UI, graceful handling of free-tier rate limits. Needs `GOOGLE_GENERATIVE_AI_API_KEY` from https://aistudio.google.com/apikey.
-- Phase 6: polish, accessibility, SEO, deploy to Vercel Hobby (set env vars, create production Stripe webhook endpoint + secret, Clerk production keys/domain).
+- Phase 6: polish (loading/empty/error states, responsive pass, SEO metadata, image optimization, accessibility check), deploy to Vercel Hobby (env vars, production Stripe webhook endpoint + secret, Clerk production keys/domain, Sanity CORS origin for the deployed URL), README with setup steps.
+- Optional: header "Categories" dropdown (18 links now crowd the strip), in-site admin view (not planned; Studio is the admin).
 - After the seed finishes (re-run `npm run seed`), rebuild so the new category/product pages are prerendered.
 - Verify current free-tier limits of each service (plan Phase 0 item, not done).
 
 ## Gotchas
+- AI SDK is v7 (`ai@7`). Docs live in `node_modules/ai/docs`. Free-tier Gemini availability changes; re-test model ids (a 404 "no longer available to new users" means retired) before changing `lib/ai/model.ts`.
 - Clerk's dashboard masks secret keys after creation; copy the full key from the Quick copy box or when creating a new key. A masked copy (`sk_test_…`) breaks auth with handshake/redirect-loop errors. `npm run check-env` detects this.
 - `npm run check-env` validates `.env.local` (presence, ASCII, prefixes, length) without printing secrets. Run it after editing keys.
 - Pages that read `params` keep the page component synchronous and read `params` inside `<Suspense>` with a skeleton (`components/product/skeletons.tsx`); otherwise dev shows an instant-navigation error.

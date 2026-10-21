@@ -524,6 +524,35 @@ export type ORDERS_BY_USER_QUERY_RESULT = Array<{
   } | null;
 }>;
 
+// Source: lib/sanity/queries.ts
+// Variable: ASSISTANT_CATALOG_QUERY
+// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  description,  material,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0,  "colors": array::unique(variants[defined(color)].color),  "sizes": array::unique(variants[defined(size)].size),  "designs": array::unique(variants[defined(design)].design)}
+export type ASSISTANT_CATALOG_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  material: string | null;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  } | null;
+  category: {
+    title: string;
+    slug: string;
+  };
+  minPrice: number;
+  maxPrice: number;
+  inStock: boolean;
+  colors: Array<string | null>;
+  sizes: Array<string | null>;
+  designs: Array<string | null>;
+}>;
+
 // Query TypeMap
 declare global {
   interface SanityQueries {
@@ -537,6 +566,7 @@ declare global {
     '*[_type == "category" && defined(slug.current)].slug.current': CATEGORY_SLUGS_QUERY_RESULT;
     '*[_type == "product" && count(variants[sku in $skus]) > 0] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }\n}': VARIANTS_BY_SKU_QUERY_RESULT;
     '*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  status,\n  total,\n  createdAt,\n  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },\n  shippingAddress\n}': ORDERS_BY_USER_QUERY_RESULT;
+    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0,\n  "colors": array::unique(variants[defined(color)].color),\n  "sizes": array::unique(variants[defined(size)].size),\n  "designs": array::unique(variants[defined(design)].design)\n}': ASSISTANT_CATALOG_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too
