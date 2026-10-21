@@ -43,3 +43,5 @@ next-env.d.ts
 
 # seed script cache
 scripts/.seed-cache.json
+
+.vercel

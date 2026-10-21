@@ -2,7 +2,7 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (Phase 6 polish done; deploy pending)_
+_Last updated: 2026-10-21 (deployed to Vercel)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
@@ -26,9 +26,14 @@ _Last updated: 2026-10-21 (Phase 6 polish done; deploy pending)_
 - **Sanity -> site refresh:** `POST /api/revalidate` (`next-sanity/webhook` `parseBody`, secret `SANITY_REVALIDATE_SECRET`) clears `products`/`product:<slug>`/`categories` tags. Verified end to end on a production build: edit stock in Sanity, page stays cached, signed webhook, page updates within a second. IMPORTANT: catalog reads now use `useCdn: false` (`sanity/lib/client.ts`; `freshClient` is an alias). With the CDN on, the refresh re-cached a stale copy. This counts against Sanity's API-request quota (about 250k/month free) instead of the CDN quota, kept low by Next caching.
 - **Known performance limit:** Lighthouse perf is 51-84 (mobile, simulated throttling). The weight is Clerk's scripts (~350 KB + a sign-up bot-check script, on every page) and React hydration (~1.2 MB total). Clerk's `prefetchUI={false}` is for custom UIs, so it was not used. Best-practices 77 is Clerk dev-instance third-party cookies. A Clerk production instance (needs an owned domain) may change both; re-measure after deploying.
 - Free-tier limits were looked up on 2026-10-21 and are in `docs/deploy.md` (Clerk free is now 50k retained users; Gemini free tier is unstable and limits were cut more than once).
+- **LIVE on Vercel (2026-10-21): https://my-farmhouse-pi.vercel.app** (Vercel project `my-farmhouse`, team `him-agnis-projects`, linked locally in `.vercel/`, which is gitignored). The GitHub repo is connected, so a push to `main` should auto-deploy production; manual deploy: `npx vercel@latest deploy --prod --yes`. Project framework preset was "Other" and was set to Next.js (also `vercel.json`). Env vars are changed with `npx vercel@latest env add NAME -e production ...`; **any env change needs a redeploy** (and `NEXT_PUBLIC_*` values are baked in at build time).
+- Configured for the live site: production env vars (Sanity ids + write token, Clerk dev keys, Stripe TEST secret, Gemini key, `SANITY_REVALIDATE_SECRET`, `NEXT_PUBLIC_SITE_URL`, deployed `STRIPE_WEBHOOK_SECRET` stored write-only); Stripe test-mode webhook endpoint `https://my-farmhouse-pi.vercel.app/api/webhooks/stripe` (events `checkout.session.completed`, `checkout.session.async_payment_succeeded`); Sanity CORS origin (with credentials) and a Sanity webhook "My Farmhouse: refresh live site" -> `/api/revalidate` (filter `_type in ["product","category"]`, projection `{_type, "slug": slug.current}`). Local `.env.local` keeps its own `stripe listen` secret; the deployed secret exists only in Vercel.
+- **Verified live:** all pages 200, canonical/sitemap/robots use the live address, 29/29 images load, Shop menu (21 links), sign-in form renders, assistant answers (tool search works with the deployed Gemini key), webhook endpoints reject bad/unsigned requests (400/401, not 500), and the REAL Sanity webhook refreshes the live site (stock edit in Sanity showed on the live page in ~8s, and again on restore). Lighthouse on live (mobile, simulated): perf 52-78, a11y 100, SEO 100 (cart 63 is the intentional noindex), best-practices 77 (Clerk dev cookies).
+- **Verified live by the owner (2026-10-21):** sign in on the live domain with Clerk's dev keys and a full test purchase both work.
+- Vercel Hobby is non-commercial. Deployment-specific URLs (`my-farmhouse-<hash>-...vercel.app`) are login-protected by Vercel; the production alias is public.
 - Stack: Next.js 16.4.2 (`cacheComponents` on, so no `export const dynamic`), Tailwind v4 via `@tailwindcss/turbopack`, shadcn/ui (`base-nova`, only `button` so far).
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
-- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-6 pushed 2026-10-21 (deploy still to do).
+- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-6 pushed 2026-10-21; deployment config (`vercel.json`, `.gitignore`, this file) uncommitted when written.
 
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
@@ -37,13 +42,13 @@ _Last updated: 2026-10-21 (Phase 6 polish done; deploy pending)_
 - Removed unused create-next-app SVGs from `public/`.
 
 ## Waiting on the user
-1. Decide whether to deploy now. Steps are in `docs/deploy.md` (Vercel account + repo import, env vars, Stripe webhook endpoint, Sanity CORS + refresh webhook). The owner must do the account steps; Claude can guide.
+1. (done) Live sign-in and test purchase verified.
 2. Confirm or change the brand look.
-3. Skim the Unsplash photos in the Studio and swap mismatches.
+3. Skim the Unsplash photos in the Studio and swap mismatches (edits go live in seconds via the Sanity webhook).
 
 ## Next up
-- Deploy (see `docs/deploy.md`), then walk the post-deploy checklist there and re-run Lighthouse on the live URL.
-- Optional: a Clerk production instance needs an owned domain; optional in-site admin view (Studio is the admin today).
+- Optional: Clerk production instance (needs an owned domain); custom domain on Vercel; in-site admin view.
+- Re-run Lighthouse after any big change; the main cost is Clerk's scripts.
 - Revisit the assistant's model ids if Gemini availability changes (see Gotchas).
 
 ## Gotchas
