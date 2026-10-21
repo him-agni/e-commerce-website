@@ -303,3 +303,180 @@ export type AllSanitySchemaTypes =
   | SanityAssetSourceData
   | SanityImageAsset
   | Geopoint;
+
+// Source: lib/sanity/queries.ts
+// Variable: CATEGORIES_QUERY
+// Query: *[_type == "category"] | order(order asc) {  _id,  title,  "slug": slug.current,  description,  image}
+export type CATEGORIES_QUERY_RESULT = Array<{
+  _id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  } | null;
+}>;
+
+// Source: lib/sanity/queries.ts
+// Variable: CATEGORY_BY_SLUG_QUERY
+// Query: *[_type == "category" && slug.current == $slug][0] {  _id,  title,  "slug": slug.current,  description}
+export type CATEGORY_BY_SLUG_QUERY_RESULT = {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+} | null;
+
+// Source: lib/sanity/queries.ts
+// Variable: FEATURED_PRODUCTS_QUERY
+// Query: *[_type == "product" && featured == true] | order(name asc) [0...8] {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+export type FEATURED_PRODUCTS_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  } | null;
+  category: {
+    title: string;
+    slug: string;
+  };
+  minPrice: number;
+  maxPrice: number;
+  inStock: boolean;
+}>;
+
+// Source: lib/sanity/queries.ts
+// Variable: ALL_PRODUCTS_QUERY
+// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+export type ALL_PRODUCTS_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  } | null;
+  category: {
+    title: string;
+    slug: string;
+  };
+  minPrice: number;
+  maxPrice: number;
+  inStock: boolean;
+}>;
+
+// Source: lib/sanity/queries.ts
+// Variable: PRODUCTS_BY_CATEGORY_QUERY
+// Query: *[_type == "product" && category->slug.current == $slug] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+export type PRODUCTS_BY_CATEGORY_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  } | null;
+  category: {
+    title: string;
+    slug: string;
+  };
+  minPrice: number;
+  maxPrice: number;
+  inStock: boolean;
+}>;
+
+// Source: lib/sanity/queries.ts
+// Variable: PRODUCT_BY_SLUG_QUERY
+// Query: *[_type == "product" && slug.current == $slug][0] {  _id,  name,  "slug": slug.current,  description,  material,  images,  "category": category->{ title, "slug": slug.current },  designs[] { _key, name, image },  variants[] { _key, color, size, design, price, stock, sku, image }}
+export type PRODUCT_BY_SLUG_QUERY_RESULT = {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  material: string | null;
+  images: Array<{
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  }>;
+  category: {
+    title: string;
+    slug: string;
+  };
+  designs: Array<{
+    _key: string;
+    name: string;
+    image: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+  }> | null;
+  variants: Array<{
+    _key: string;
+    color: string | null;
+    size: string | null;
+    design: string | null;
+    price: number;
+    stock: number;
+    sku: string;
+    image: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+  }>;
+} | null;
+
+// Source: lib/sanity/queries.ts
+// Variable: PRODUCT_SLUGS_QUERY
+// Query: *[_type == "product" && defined(slug.current)].slug.current
+export type PRODUCT_SLUGS_QUERY_RESULT = Array<string>;
+
+// Source: lib/sanity/queries.ts
+// Variable: CATEGORY_SLUGS_QUERY
+// Query: *[_type == "category" && defined(slug.current)].slug.current
+export type CATEGORY_SLUGS_QUERY_RESULT = Array<string>;
+
+// Query TypeMap
+declare global {
+  interface SanityQueries {
+    '*[_type == "category"] | order(order asc) {\n  _id,\n  title,\n  "slug": slug.current,\n  description,\n  image\n}': CATEGORIES_QUERY_RESULT;
+    '*[_type == "category" && slug.current == $slug][0] {\n  _id,\n  title,\n  "slug": slug.current,\n  description\n}': CATEGORY_BY_SLUG_QUERY_RESULT;
+    '*[_type == "product" && featured == true] | order(name asc) [0...8] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': FEATURED_PRODUCTS_QUERY_RESULT;
+    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': ALL_PRODUCTS_QUERY_RESULT;
+    '*[_type == "product" && category->slug.current == $slug] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': PRODUCTS_BY_CATEGORY_QUERY_RESULT;
+    '*[_type == "product" && slug.current == $slug][0] {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  images,\n  "category": category->{ title, "slug": slug.current },\n  designs[] { _key, name, image },\n  variants[] { _key, color, size, design, price, stock, sku, image }\n}': PRODUCT_BY_SLUG_QUERY_RESULT;
+    '*[_type == "product" && defined(slug.current)].slug.current': PRODUCT_SLUGS_QUERY_RESULT;
+    '*[_type == "category" && defined(slug.current)].slug.current': CATEGORY_SLUGS_QUERY_RESULT;
+  }
+}
+// Lets @sanity/client releases that predate the global registry read it too
+declare module "@sanity/client" {
+  interface SanityQueries extends globalThis.SanityQueries {}
+}

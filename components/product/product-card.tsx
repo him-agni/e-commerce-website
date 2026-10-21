@@ -1,0 +1,49 @@
+import Image from "next/image";
+import Link from "next/link";
+import { formatPrice } from "@/lib/format";
+import { urlFor } from "@/sanity/lib/image";
+import type { FEATURED_PRODUCTS_QUERY_RESULT } from "@/sanity/types";
+
+export type ProductCardData = FEATURED_PRODUCTS_QUERY_RESULT[number];
+
+export function ProductCard({
+  product,
+  priority = false,
+}: {
+  product: ProductCardData;
+  priority?: boolean;
+}) {
+  const hasRange = product.minPrice !== product.maxPrice;
+
+  return (
+    <Link href={`/products/${product.slug}`} className="group block">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
+        {product.image && (
+          <Image
+            src={urlFor(product.image).width(800).url()}
+            alt={product.name}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={priority}
+          />
+        )}
+        {!product.inStock && (
+          <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium">
+            Sold out
+          </span>
+        )}
+      </div>
+      <div className="mt-3 space-y-0.5">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+          {product.category.title}
+        </p>
+        <h3 className="font-heading text-lg leading-snug">{product.name}</h3>
+        <p className="text-sm text-muted-foreground">
+          {hasRange ? "From " : ""}
+          {formatPrice(product.minPrice)}
+        </p>
+      </div>
+    </Link>
+  );
+}
