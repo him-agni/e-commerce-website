@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typegen": "sanity schema extract --enforce-required-fields --force --path sanity.schema.json && sanity typegen generate",
-    "seed": "node --env-file=.env.local scripts/seed.mjs"
+    "seed": "node --env-file=.env.local scripts/seed.mjs",
+    "check-env": "node --env-file=.env.local scripts/check-env.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

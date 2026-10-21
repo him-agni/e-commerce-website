@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ProductDetails } from "@/components/product/product-details";
+import { ProductPageSkeleton } from "@/components/product/skeletons";
 import { Container } from "@/components/site/container";
 import { getProduct, getProductSlugs } from "@/lib/sanity/data";
 
@@ -22,13 +24,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+// The page stays synchronous so the shell (and the skeleton) is available instantly;
+// reading params happens inside the Suspense boundary.
+export default function ProductPage({ params }: Props) {
+  return (
+    <Container className="py-10">
+      <Suspense fallback={<ProductPageSkeleton />}>
+        <ProductContent params={params} />
+      </Suspense>
+    </Container>
+  );
+}
+
+async function ProductContent({ params }: Props) {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) notFound();
 
   return (
-    <Container className="py-10">
+    <>
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Home
@@ -44,6 +58,6 @@ export default async function ProductPage({ params }: Props) {
         <span className="text-foreground">{product.name}</span>
       </nav>
       <ProductDetails product={product} />
-    </Container>
+    </>
   );
 }

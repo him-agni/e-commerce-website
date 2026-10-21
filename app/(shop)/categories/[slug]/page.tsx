@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
+import { ProductGridSkeleton } from "@/components/product/skeletons";
 import { Container } from "@/components/site/container";
 import {
   getCategory,
@@ -26,7 +28,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CategoryPage({ params }: Props) {
+// The page stays synchronous so the shell (and the skeleton) is available instantly;
+// reading params happens inside the Suspense boundary.
+export default function CategoryPage({ params }: Props) {
+  return (
+    <Container className="py-12">
+      <Suspense fallback={<ProductGridSkeleton />}>
+        <CategoryContent params={params} />
+      </Suspense>
+    </Container>
+  );
+}
+
+async function CategoryContent({ params }: Props) {
   const { slug } = await params;
   const [category, products] = await Promise.all([
     getCategory(slug),
@@ -35,7 +49,7 @@ export default async function CategoryPage({ params }: Props) {
   if (!category) notFound();
 
   return (
-    <Container className="py-12">
+    <>
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Home
@@ -51,6 +65,6 @@ export default async function CategoryPage({ params }: Props) {
         products={products}
         emptyMessage="Nothing in this category yet. Check back soon."
       />
-    </Container>
+    </>
   );
 }
