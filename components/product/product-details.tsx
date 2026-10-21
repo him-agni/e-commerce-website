@@ -121,7 +121,7 @@ export function ProductDetails({ product }: { product: Product }) {
 
   return (
     <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
-      <div className="space-y-3">
+      <div className="blur-rise space-y-3">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
           {activeImage && (
             <Image
@@ -130,7 +130,8 @@ export function ProductDetails({ product }: { product: Product }) {
               fill
               sizes="(min-width: 768px) 50vw, 100vw"
               className="object-cover"
-              priority
+              loading="eager"
+              fetchPriority="high"
             />
           )}
         </div>
@@ -164,7 +165,10 @@ export function ProductDetails({ product }: { product: Product }) {
         )}
       </div>
 
-      <div className="space-y-6">
+      <div
+        className="blur-in space-y-6"
+        style={{ "--delay": "250ms" } as React.CSSProperties}
+      >
         <div>
           <h1 className="text-3xl sm:text-4xl">{product.name}</h1>
           <p className="mt-3 text-2xl">{formatPrice(variant.price)}</p>

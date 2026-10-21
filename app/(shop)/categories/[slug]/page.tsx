@@ -51,16 +51,26 @@ async function CategoryContent({ params }: Props) {
 
   return (
     <>
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
+      <nav aria-label="Breadcrumb" className="blur-in mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Home
         </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{category.title}</span>
       </nav>
-      <h1 className="mb-2 text-4xl">{category.title}</h1>
+      <h1
+        className="blur-in mb-2 text-4xl"
+        style={{ "--delay": "150ms" } as React.CSSProperties}
+      >
+        {category.title}
+      </h1>
       {category.description && (
-        <p className="mb-10 max-w-xl text-muted-foreground">{category.description}</p>
+        <p
+          className="blur-in mb-10 max-w-xl text-muted-foreground"
+          style={{ "--delay": "300ms" } as React.CSSProperties}
+        >
+          {category.description}
+        </p>
       )}
       <ProductGrid
         products={products}

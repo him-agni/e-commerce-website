@@ -13,8 +13,11 @@ export default async function ProductsPage() {
 
   return (
     <Container className="py-12">
-      <h1 className="mb-2 text-4xl">All furniture</h1>
-      <p className="mb-10 text-muted-foreground">
+      <h1 className="blur-in mb-2 text-4xl">All furniture</h1>
+      <p
+        className="blur-in mb-10 text-muted-foreground"
+        style={{ "--delay": "200ms" } as React.CSSProperties}
+      >
         {products.length} {products.length === 1 ? "piece" : "pieces"}
       </p>
       <ProductGrid products={products} headingLevel={2} priorityCount={4} />

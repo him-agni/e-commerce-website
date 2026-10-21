@@ -20,7 +20,10 @@ export function ProductCard({
   const hasRange = product.minPrice !== product.maxPrice;
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block">
+    <Link
+      href={`/products/${product.slug}`}
+      className="group block transition-transform duration-500 hover:-translate-y-1"
+    >
       <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
         {product.image && (
           <Image
@@ -29,7 +32,7 @@ export function ProductCard({
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            priority={priority}
+            {...(priority ? { loading: "eager", fetchPriority: "high" } : {})}
           />
         )}
         {!product.inStock && (

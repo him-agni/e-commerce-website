@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ProductGrid } from "@/components/product/product-grid";
+import { HeroBanner } from "@/components/home/hero-banner";
+import { ProductShowcase } from "@/components/home/product-showcase";
+import { WhyChoose } from "@/components/home/why-choose";
+import { SHOWCASE_FILTERS, SHOWCASE_SIZE, type ShowcaseGroups } from "@/components/home/showcase-filters";
+import { Reveal } from "@/components/motion/reveal";
+import { RevealController } from "@/components/motion/reveal-controller";
 import { Container } from "@/components/site/container";
-import { buttonVariants } from "@/components/ui/button";
-import { getCategories, getFeaturedProducts } from "@/lib/sanity/data";
-import { cn } from "@/lib/utils";
+import { getAllProducts, getCategories, getFeaturedProducts } from "@/lib/sanity/data";
 import { urlFor } from "@/sanity/lib/image";
 
 export const metadata: Metadata = {
@@ -13,102 +16,94 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [categories, featured] = await Promise.all([
+  const [categories, products, featured] = await Promise.all([
     getCategories(),
+    getAllProducts(),
     getFeaturedProducts(),
   ]);
-  const heroImage = featured[0]?.image;
+
+  // Pick the best-looking room photos for the two large frames, with safe fallbacks.
+  const imageOf = (slug: string) => products.find((p) => p.slug === slug)?.image ?? null;
+  const heroImage =
+    imageOf("homestead-3-piece-set") ?? featured[0]?.image ?? products[0]?.image ?? null;
+  const whyImage =
+    categories.find((c) => c.slug === "coffee-tables")?.image ??
+    imageOf("ember-round-coffee-table") ??
+    products[1]?.image ??
+    null;
+
+  // Precompute what each filter shows, so the browser only receives the handful of cards it needs.
+  const featuredSlugs = featured.map((p) => p.slug);
+  const toCard = (p: (typeof products)[number]) => ({
+    id: p._id,
+    name: p.name,
+    slug: p.slug,
+    imageUrl: p.image ? urlFor(p.image).width(900).url() : null,
+    categoryTitle: p.category.title,
+    minPrice: p.minPrice,
+    maxPrice: p.maxPrice,
+    inStock: p.inStock,
+  });
+  const groups = Object.fromEntries(
+    SHOWCASE_FILTERS.map((filter) => {
+      const matching = filter.slugs
+        ? products.filter((p) => (filter.slugs as readonly string[]).includes(p.category.slug))
+        : // "All" leads with the featured pieces.
+          [
+            ...products.filter((p) => featuredSlugs.includes(p.slug)),
+            ...products.filter((p) => !featuredSlugs.includes(p.slug)),
+          ];
+      return [filter.id, matching.slice(0, SHOWCASE_SIZE).map(toCard)];
+    }),
+  ) as ShowcaseGroups;
 
   return (
     <>
-      <section className="border-b bg-secondary/40">
-        <Container className="grid items-center gap-10 py-12 md:grid-cols-2 md:py-20">
-          <div className="space-y-6">
-            <p className="text-sm uppercase tracking-widest text-wood">
-              Modern farmhouse furniture
+      <RevealController />
+      <HeroBanner image={heroImage} />
+
+      <section className="pt-24">
+        <Container>
+          <Reveal className="mx-auto mb-10 max-w-xl text-center">
+            <h2 className="text-4xl sm:text-5xl">Our products</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Pieces chosen for lasting quality and a warm, lived-in feel.
             </p>
-            <h1 className="text-4xl leading-tight sm:text-5xl lg:text-6xl">
-              Furniture with farmhouse soul
-            </h1>
-            <p className="max-w-md text-lg text-muted-foreground">
-              Warm woods, soft linens and black iron accents. Pieces made to be
-              lived in, for every room of the house.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/products"
-                className={cn(buttonVariants({ size: "lg" }), "h-11 px-6 text-base")}
-              >
-                Shop all
-              </Link>
-              <Link
-                href="#categories"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 px-6 text-base",
-                )}
-              >
-                Browse categories
-              </Link>
-            </div>
-          </div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-            {heroImage && (
-              <Image
-                src={urlFor(heroImage).width(1400).url()}
-                alt=""
-                fill
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-cover"
-                priority
-              />
-            )}
-          </div>
+          </Reveal>
+          <ProductShowcase groups={groups} />
         </Container>
       </section>
 
-      <section className="pt-16">
-        <Container>
-          <div className="mb-8 flex items-end justify-between">
-            <h2 className="text-3xl">Featured pieces</h2>
-            <Link
-              href="/products"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              View all
-            </Link>
-          </div>
-          <ProductGrid
-            products={featured}
-            emptyMessage="Featured products will appear here."
-          />
-        </Container>
-      </section>
+      <WhyChoose image={whyImage} />
 
-      <section id="categories" className="scroll-mt-24 pt-20">
+      <section id="categories" className="scroll-mt-24 pb-4">
         <Container>
-          <h2 className="mb-8 text-3xl">Shop by category</h2>
+          <Reveal className="mb-8">
+            <h2 className="text-3xl sm:text-4xl">Shop by category</h2>
+          </Reveal>
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <li key={category._id}>
-                <Link
-                  href={`/categories/${category.slug}`}
-                  className="group relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted"
-                >
-                  {category.image && (
-                    <Image
-                      src={urlFor(category.image).width(700).url()}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  )}
-                  <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                  <span className="absolute inset-x-0 bottom-0 p-4 font-heading text-xl text-white">
-                    {category.title}
-                  </span>
-                </Link>
+                <Reveal delay={(index % 4) * 130}>
+                  <Link
+                    href={`/categories/${category.slug}`}
+                    className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-muted"
+                  >
+                    {category.image && (
+                      <Image
+                        src={urlFor(category.image).width(700).url()}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    <span className="absolute inset-x-0 bottom-0 p-4 font-heading text-xl text-white">
+                      {category.title}
+                    </span>
+                  </Link>
+                </Reveal>
               </li>
             ))}
           </ul>

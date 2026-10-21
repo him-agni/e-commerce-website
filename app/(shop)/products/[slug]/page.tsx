@@ -85,7 +85,7 @@ async function ProductContent({ params }: Props) {
         // "<" is escaped so product text can never close the script tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
+      <nav aria-label="Breadcrumb" className="blur-in mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Home
         </Link>

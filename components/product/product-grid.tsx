@@ -1,3 +1,4 @@
+import { RevealController } from "@/components/motion/reveal-controller";
 import { ProductCard, type ProductCardData } from "./product-card";
 
 export function ProductGrid({
@@ -21,16 +22,28 @@ export function ProductGrid({
   }
 
   return (
-    <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-      {products.map((product, index) => (
-        <li key={product._id}>
-          <ProductCard
-            product={product}
-            priority={index < priorityCount}
-            headingLevel={headingLevel}
-          />
-        </li>
-      ))}
-    </ul>
+    <>
+      <RevealController />
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+        {products.map((product, index) => {
+          const aboveTheFold = index < priorityCount;
+          return (
+            <li
+              key={product._id}
+              // Cards at the top rise in on load (plain CSS, visible from the start); the rest fade in as
+              // they scroll into view. Either way each card in a row arrives a beat after the last.
+              {...(aboveTheFold ? { className: "blur-rise" } : { "data-reveal": "" })}
+              style={{ "--delay": `${(index % 4) * 130}ms` } as React.CSSProperties}
+            >
+              <ProductCard
+                product={product}
+                priority={aboveTheFold}
+                headingLevel={headingLevel}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
