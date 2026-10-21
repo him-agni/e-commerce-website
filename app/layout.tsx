@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,13 +18,24 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
+const description =
+  "Modern farmhouse furniture: beds, dining tables, sofas, rugs, lighting and more.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "My Farmhouse | Modern farmhouse furniture",
-    template: "%s | My Farmhouse",
+    default: `${SITE_NAME} | Modern farmhouse furniture`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Modern farmhouse furniture: beds, dining tables, sofas, rugs, lighting and more.",
+  description,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    title: `${SITE_NAME} | Modern farmhouse furniture`,
+    description,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

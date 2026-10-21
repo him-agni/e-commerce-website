@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -6,6 +7,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { getCategories, getFeaturedProducts } from "@/lib/sanity/data";
 import { cn } from "@/lib/utils";
 import { urlFor } from "@/sanity/lib/image";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function Home() {
   const [categories, featured] = await Promise.all([

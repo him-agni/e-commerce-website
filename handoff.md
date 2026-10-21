@@ -2,7 +2,7 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (Phase 5 built; seed complete, 20 categories)_
+_Last updated: 2026-10-21 (Phase 6 polish done; deploy pending)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
@@ -21,9 +21,14 @@ _Last updated: 2026-10-21 (Phase 5 built; seed complete, 20 categories)_
 - Tools (`lib/ai/tools.ts`): `searchProducts` (ranking in code, `lib/ai/search.ts`: plurals, synonyms, head-noun weighting, price/category filters; whole catalog fetched via cached `getAssistantCatalog`, fine for dozens of products, revisit if the catalog grows large), `getProductDetails`, `listCategories`, `getMyOrders` (userId comes from the server's Clerk session, never from the model/browser; no shipping address returned). System prompt in `lib/ai/system-prompt.ts` (store-only, no invented policies, ignores injected instructions).
 - Safeguards: rate limit 8/min and 60/hr per user/IP (in memory per instance, `lib/ai/rate-limit.ts`), body size and 500-char message caps, history validated with `validateUIMessages`, browser `system` messages dropped, generic errors to the browser (details only in server log). Widget renders markdown through React elements (only same-site `/links`, no raw HTML).
 - **Verified:** search ranking (14+11 cases on the real catalog), live Gemini conversations through the API (search, details, off-topic refusal, prompt-extraction refusal, signed-out order question), validation + rate-limit responses, order tool for owner / signed-out / other user, browser UI on desktop and 390px (open, suggestions, cards, navigation keeps widget open, Escape + focus return, no console errors), renderer safety cases. Signed-in "where is my order" verified by the owner in the real widget (both orders listed correctly). Renderer supports paragraphs, bullets, numbered lists, bold, same-site links.
+- **Phase 6 (polish) built and verified; deployment itself still to do** (2026-10-21). Audit-driven: axe (7 pages x desktop/mobile x light/dark) found 3 issues, 2 mine (launcher accessible name, heading order) now fixed; the 3rd is Clerk's own dev badge. Final: axe clean except that badge; Lighthouse a11y 100 on all pages, SEO 100 (cart is 63 on purpose: it is `noindex`); real LCP under throttling about 1.9-2.4s.
+- Changes: header "Shop" popover menu (Base UI) replaces the 20-link strip; chat split into a tiny launcher + lazily loaded `ChatPanel` (AI SDK no longer in the initial bundle; Escape now works from anywhere); product grids take `headingLevel`/`priorityCount` (home preloads 1 image instead of 5); SEO: `lib/site.ts`, metadataBase/OpenGraph/Twitter, canonical URLs, `robots.ts`, `sitemap.ts` (82 URLs), product JSON-LD, `noindex` on cart/orders/checkout/sign-in/up; `error.tsx` + `global-error.tsx` (Next 16 uses `retry`, not `reset`); README rewritten; `docs/deploy.md` (Vercel, Stripe + Sanity webhooks, Clerk, checklist, free-tier table, troubleshooting).
+- **Sanity -> site refresh:** `POST /api/revalidate` (`next-sanity/webhook` `parseBody`, secret `SANITY_REVALIDATE_SECRET`) clears `products`/`product:<slug>`/`categories` tags. Verified end to end on a production build: edit stock in Sanity, page stays cached, signed webhook, page updates within a second. IMPORTANT: catalog reads now use `useCdn: false` (`sanity/lib/client.ts`; `freshClient` is an alias). With the CDN on, the refresh re-cached a stale copy. This counts against Sanity's API-request quota (about 250k/month free) instead of the CDN quota, kept low by Next caching.
+- **Known performance limit:** Lighthouse perf is 51-84 (mobile, simulated throttling). The weight is Clerk's scripts (~350 KB + a sign-up bot-check script, on every page) and React hydration (~1.2 MB total). Clerk's `prefetchUI={false}` is for custom UIs, so it was not used. Best-practices 77 is Clerk dev-instance third-party cookies. A Clerk production instance (needs an owned domain) may change both; re-measure after deploying.
+- Free-tier limits were looked up on 2026-10-21 and are in `docs/deploy.md` (Clerk free is now 50k retained users; Gemini free tier is unstable and limits were cut more than once).
 - Stack: Next.js 16.4.2 (`cacheComponents` on, so no `export const dynamic`), Tailwind v4 via `@tailwindcss/turbopack`, shadcn/ui (`base-nova`, only `button` so far).
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
-- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-5 plus the full 20-category catalog committed and pushed 2026-10-21.
+- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-6 pushed 2026-10-21 (deploy still to do).
 
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
@@ -32,14 +37,14 @@ _Last updated: 2026-10-21 (Phase 5 built; seed complete, 20 categories)_
 - Removed unused create-next-app SVGs from `public/`.
 
 ## Waiting on the user
-2. (done) Google AI Studio key is set.
-3. Confirm or change the brand look (now visible on the live pages).
+1. Decide whether to deploy now. Steps are in `docs/deploy.md` (Vercel account + repo import, env vars, Stripe webhook endpoint, Sanity CORS + refresh webhook). The owner must do the account steps; Claude can guide.
+2. Confirm or change the brand look.
+3. Skim the Unsplash photos in the Studio and swap mismatches.
 
 ## Next up
-- Phase 6: polish (loading/empty/error states, responsive pass, SEO metadata, image optimization, accessibility check), deploy to Vercel Hobby (env vars, production Stripe webhook endpoint + secret, Clerk production keys/domain, Sanity CORS origin for the deployed URL), README with setup steps.
-- Optional: header "Categories" dropdown (18 links now crowd the strip), in-site admin view (not planned; Studio is the admin).
-- Rebuild before deploying so all 20 categories / 60 products are prerendered. Skim the Unsplash photos in the Studio and swap mismatches.
-- Verify current free-tier limits of each service (plan Phase 0 item, not done).
+- Deploy (see `docs/deploy.md`), then walk the post-deploy checklist there and re-run Lighthouse on the live URL.
+- Optional: a Clerk production instance needs an owned domain; optional in-site admin view (Studio is the admin today).
+- Revisit the assistant's model ids if Gemini availability changes (see Gotchas).
 
 ## Gotchas
 - AI SDK is v7 (`ai@7`). Docs live in `node_modules/ai/docs`. Free-tier Gemini availability changes; re-test model ids (a 404 "no longer available to new users" means retired) before changing `lib/ai/model.ts`.

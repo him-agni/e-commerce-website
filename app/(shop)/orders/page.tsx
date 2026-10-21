@@ -10,7 +10,10 @@ import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries";
 import { cn } from "@/lib/utils";
 import { freshClient } from "@/sanity/lib/client";
 
-export const metadata: Metadata = { title: "Your orders" };
+export const metadata: Metadata = {
+  title: "Your orders",
+  robots: { index: false, follow: false },
+};
 
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 

@@ -5,6 +5,7 @@ import { getAllProducts } from "@/lib/sanity/data";
 
 export const metadata: Metadata = {
   title: "All furniture",
+  alternates: { canonical: "/products" },
 };
 
 export default async function ProductsPage() {
@@ -16,7 +17,7 @@ export default async function ProductsPage() {
       <p className="mb-10 text-muted-foreground">
         {products.length} {products.length === 1 ? "piece" : "pieces"}
       </p>
-      <ProductGrid products={products} />
+      <ProductGrid products={products} headingLevel={2} priorityCount={4} />
     </Container>
   );
 }

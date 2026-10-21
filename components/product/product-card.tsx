@@ -9,10 +9,14 @@ export type ProductCardData = FEATURED_PRODUCTS_QUERY_RESULT[number];
 export function ProductCard({
   product,
   priority = false,
+  headingLevel = 3,
 }: {
   product: ProductCardData;
   priority?: boolean;
+  /** Heading level for the product name, so headings follow the page's outline (h2 under an h1, h3 under an h2). */
+  headingLevel?: 2 | 3;
 }) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const hasRange = product.minPrice !== product.maxPrice;
 
   return (
@@ -38,7 +42,7 @@ export function ProductCard({
         <p className="text-xs uppercase tracking-wider text-muted-foreground">
           {product.category.title}
         </p>
-        <h3 className="font-heading text-lg leading-snug">{product.name}</h3>
+        <Heading className="font-heading text-lg leading-snug">{product.name}</Heading>
         <p className="text-sm text-muted-foreground">
           {hasRange ? "From " : ""}
           {formatPrice(product.minPrice)}

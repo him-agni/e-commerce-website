@@ -9,7 +9,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { stripe } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Order confirmed" };
+export const metadata: Metadata = {
+  title: "Order confirmed",
+  robots: { index: false, follow: false },
+};
 
 type Props = { searchParams: Promise<{ session_id?: string }> };
 

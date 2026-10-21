@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCategories } from "@/lib/sanity/data";
 import { AuthControls } from "./auth-controls";
 import { CartLink } from "./cart-link";
+import { CategoriesMenu } from "./categories-menu";
 import { Container } from "./container";
 
 export async function Header() {
@@ -14,32 +15,13 @@ export async function Header() {
           My Farmhouse
         </Link>
         <nav aria-label="Main" className="flex items-center gap-5 text-sm">
-          <Link
-            href="/products"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Shop all
-          </Link>
+          <CategoriesMenu
+            categories={categories.map(({ _id, title, slug }) => ({ _id, title, slug }))}
+          />
           <AuthControls />
           <CartLink />
         </nav>
       </Container>
-      <nav aria-label="Categories" className="border-t">
-        <Container>
-          <ul className="flex gap-6 overflow-x-auto py-2.5 text-sm whitespace-nowrap">
-            {categories.map((category) => (
-              <li key={category._id}>
-                <Link
-                  href={`/categories/${category.slug}`}
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {category.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </nav>
     </header>
   );
 }

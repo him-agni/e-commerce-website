@@ -12,6 +12,7 @@ const rules = [
   { name: "STRIPE_WEBHOOK_SECRET", required: false, prefix: "whsec_", minLength: 20, note: "needed from Phase 4" },
   { name: "GOOGLE_GENERATIVE_AI_API_KEY", required: false, minLength: 20, note: "needed from Phase 5" },
   { name: "UNSPLASH_ACCESS_KEY", required: false, minLength: 20, note: "only for the seed script" },
+  { name: "SANITY_REVALIDATE_SECRET", required: false, minLength: 16, note: "needed once deployed, see docs/deploy.md" },
   { name: "NEXT_PUBLIC_SITE_URL", required: false },
 ];
 

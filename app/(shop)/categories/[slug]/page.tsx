@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: category.title,
     description: category.description ?? undefined,
+    alternates: { canonical: `/categories/${category.slug}` },
   };
 }
 
@@ -64,6 +65,8 @@ async function CategoryContent({ params }: Props) {
       <ProductGrid
         products={products}
         emptyMessage="Nothing in this category yet. Check back soon."
+        headingLevel={2}
+        priorityCount={4}
       />
     </>
   );
