@@ -1,7 +1,7 @@
 # My Farmhouse: modern farmhouse furniture store
 
 ## Context
-Greenfield portfolio/learning project (empty folder, not a git repo). Goal: a modern-farmhouse furniture e-commerce site named **My Farmhouse**, modeled on the architecture of sonnysangha/ecommerce-ai-nextjs-16-sanity-clerk-agentkit-stripe-checkout-vercel-ai-agents, but on free tiers only and with Gemini instead of Claude. That repo is CC BY-NC 4.0, so we write our own code with the same architecture rather than copying it.
+Greenfield portfolio/learning project (empty folder, not a git repo). Goal: a modern-farmhouse furniture e-commerce site named **My Farmhouse**, built on free tiers only, with an AI shopping assistant powered by Gemini. All code is written from scratch.
 
 ## Decisions made
 - Purpose: portfolio/learning. Stripe stays in **test mode**; no real money.
@@ -16,7 +16,7 @@ Greenfield portfolio/learning project (empty folder, not a git repo). Goal: a mo
 No separate database. **Sanity is the database**: products, categories, variants, customers and orders all live there. Clerk stores users; Stripe stores payments. If Sanity's free limits ever bind, Postgres (Neon free) is the fallback for orders only.
 
 ## Stack
-Next.js (App Router, TypeScript), Tailwind + shadcn/ui, Sanity (+ embedded Studio at `/studio`), Clerk, Stripe Checkout + webhook, Zustand cart (localStorage), Vercel AI SDK with the Google provider and a free Gemini API key from Google AI Studio (replaces the paid Vercel AI Gateway + Claude), Vercel Hobby for hosting. Verify current free-tier limits of each service at the start of Phase 0.
+Next.js (App Router, TypeScript), Tailwind + shadcn/ui, Sanity (+ embedded Studio at `/studio`), Clerk, Stripe Checkout + webhook, Zustand cart (localStorage), Vercel AI SDK with the Google provider and a free Gemini API key from Google AI Studio, Vercel Hobby for hosting. Verify current free-tier limits of each service at the start of Phase 0.
 
 ## Data model (Sanity)
 - **category**: title, slug, description, image.
