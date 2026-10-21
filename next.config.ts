@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_CATEGORY_REDIRECTS } from "./lib/legacy-categories";
 
 const sanityProjectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 
@@ -9,6 +10,13 @@ const nextConfig: NextConfig = {
   logging: {
     // Forward only browser errors to the terminal; warnings stay in the browser console.
     browserToTerminal: "error",
+  },
+  async redirects() {
+    return LEGACY_CATEGORY_REDIRECTS.map(({ from, to }) => ({
+      source: `/categories/${from}`,
+      destination: to,
+      permanent: true,
+    }));
   },
   images: {
     remotePatterns: [

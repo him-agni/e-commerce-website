@@ -47,10 +47,10 @@ async function unsplash(url) {
   return res;
 }
 
-async function searchPhotos(category) {
-  if (cache.searches[category.slug]) return cache.searches[category.slug];
+async function searchPhotos(key, query) {
+  if (cache.searches[key]) return cache.searches[key];
   const url = new URL("https://api.unsplash.com/search/photos");
-  url.searchParams.set("query", category.query);
+  url.searchParams.set("query", query);
   url.searchParams.set("per_page", String(SEARCH_RESULTS));
   url.searchParams.set("orientation", "landscape");
   const { results } = await (await unsplash(url)).json();
@@ -62,8 +62,8 @@ async function searchPhotos(category) {
     author: p.user.name,
     authorUrl: p.user.links.html,
   }));
-  if (photos.length === 0) throw new Error(`No photos found for "${category.query}"`);
-  cache.searches[category.slug] = photos;
+  if (photos.length === 0) throw new Error(`No photos found for "${query}"`);
+  cache.searches[key] = photos;
   saveCache();
   return photos;
 }
@@ -126,54 +126,63 @@ function buildVariants(product, slug) {
 }
 
 async function seedCategory(category, index) {
-  const photos = await searchPhotos(category);
-  const pick = (i) => photos[i % photos.length];
+  const tx = sanity.transaction();
+  let categoryImage;
+  let productCount = 0;
 
-  const assetIds = new Map();
-  const needed = category.products.length * PHOTOS_PER_PRODUCT;
-  for (let i = 0; i < needed; i++) {
-    const photo = pick(i);
-    if (!assetIds.has(photo.id)) assetIds.set(photo.id, await ensureAsset(photo));
+  // Each group is one hashtag (or the whole category when it has none); its photos come from its own search.
+  for (const group of category.groups) {
+    const photos = await searchPhotos(`${category.slug}:${group.tag ?? "all"}`, group.query);
+    const pick = (i) => photos[i % photos.length];
+
+    const assetIds = new Map();
+    const needed = group.products.length * PHOTOS_PER_PRODUCT;
+    for (let i = 0; i < needed; i++) {
+      const photo = pick(i);
+      if (!assetIds.has(photo.id)) assetIds.set(photo.id, await ensureAsset(photo));
+    }
+    categoryImage ??= imageRef(assetIds.get(pick(0).id));
+
+    group.products.forEach((product, pi) => {
+      const slug = slugify(product.name);
+      const images = Array.from({ length: PHOTOS_PER_PRODUCT }, (_, k) => {
+        const photo = pick(pi * PHOTOS_PER_PRODUCT + k);
+        return { _key: `img-${k}`, ...imageRef(assetIds.get(photo.id)) };
+      });
+      tx.createIfNotExists({
+        _id: `product-${slug}`,
+        _type: "product",
+        name: product.name,
+        slug: { _type: "slug", current: slug },
+        description: product.description,
+        category: { _type: "reference", _ref: `category-${category.slug}` },
+        ...(group.tag && { tags: [group.tag] }),
+        material: product.material,
+        images,
+        featured: Boolean(product.featured),
+        designs: product.designs.map((name) => ({
+          _key: slugify(name),
+          _type: "design",
+          name,
+        })),
+        variants: buildVariants(product, slug),
+      });
+      productCount++;
+    });
   }
 
-  const tx = sanity.transaction();
   tx.createIfNotExists({
     _id: `category-${category.slug}`,
     _type: "category",
     title: category.title,
     slug: { _type: "slug", current: category.slug },
     description: category.description,
-    image: imageRef(assetIds.get(pick(0).id)),
+    image: categoryImage,
     order: index + 1,
   });
 
-  category.products.forEach((product, pi) => {
-    const slug = slugify(product.name);
-    const images = Array.from({ length: PHOTOS_PER_PRODUCT }, (_, k) => {
-      const photo = pick(pi * PHOTOS_PER_PRODUCT + k);
-      return { _key: `img-${k}`, ...imageRef(assetIds.get(photo.id)) };
-    });
-    tx.createIfNotExists({
-      _id: `product-${slug}`,
-      _type: "product",
-      name: product.name,
-      slug: { _type: "slug", current: slug },
-      description: product.description,
-      category: { _type: "reference", _ref: `category-${category.slug}` },
-      material: product.material,
-      images,
-      featured: Boolean(product.featured),
-      designs: product.designs.map((name) => ({
-        _key: slugify(name),
-        _type: "design",
-        name,
-      })),
-      variants: buildVariants(product, slug),
-    });
-  });
-
   await tx.commit();
-  console.log(`✓ ${category.title}: category + ${category.products.length} products`);
+  console.log(`✓ ${category.title}: category + ${productCount} products`);
 }
 
 let done = 0;

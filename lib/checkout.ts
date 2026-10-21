@@ -2,8 +2,7 @@ import "server-only";
 import { lookupVariants } from "@/lib/cart/lookup";
 import { stripe } from "@/lib/stripe";
 
-export const MAX_LINES = 20;
-export const MAX_QUANTITY_PER_LINE = 20;
+import { MAX_LINES, MAX_QUANTITY_PER_LINE } from "@/lib/cart/limits";
 
 export type CheckoutLine = { sku: string; quantity: number };
 

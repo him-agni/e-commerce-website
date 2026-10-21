@@ -23,6 +23,23 @@ export const productType = defineType({
       to: [{ type: "category" }],
       validation: (rule) => rule.required(),
     }),
+    defineField({
+      name: "tags",
+      title: "Hashtags",
+      description:
+        "Groups products inside a category, for example accent-chair or tv-stand. They show as " +
+        "#accent-chair on the product, and become filter pills and pages inside the category. " +
+        "Lowercase letters, numbers and dashes only.",
+      type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+      validation: (rule) =>
+        rule.unique().custom((tags) =>
+          (tags as string[] | undefined)?.every((t) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(t))
+            ? true
+            : "Use lowercase letters, numbers and single dashes, like accent-chair",
+        ),
+    }),
     defineField({ name: "material", type: "string" }),
     defineField({
       name: "images",

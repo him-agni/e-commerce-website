@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { MAX_QUANTITY_PER_LINE } from "./limits";
 
 /**
  * A cart line. Everything except sku and quantity is a snapshot for display;
@@ -32,7 +33,8 @@ export const useCart = create<CartState>()(
       addItem: (item, quantity = 1) => {
         const existing = get().items.find((i) => i.sku === item.sku);
         const current = existing?.quantity ?? 0;
-        const next = Math.min(current + quantity, item.stock);
+        // Never more than is in stock, and never more than checkout will accept for one line.
+        const next = Math.min(current + quantity, item.stock, MAX_QUANTITY_PER_LINE);
         const added = next - current;
         if (added <= 0) return 0;
         set((state) => ({

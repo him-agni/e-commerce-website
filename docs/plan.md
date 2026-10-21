@@ -24,7 +24,7 @@ Next.js (App Router, TypeScript), Tailwind + shadcn/ui, Sanity (+ embedded Studi
 - **variant** (object inside product): color, size, design (optional), price (USD cents), stock, sku.
 - **customer**: clerkUserId, stripeCustomerId. (Email and name were dropped on 2026-10-21: the Sanity dataset is publicly readable, so personal data stays in Stripe and Clerk.)
 - **order**: orderNumber, items (snapshot of name, variant, price at purchase), total, status (paid, shipped, delivered, cancelled), customer (ref), stripeSessionId. (The shipping address is not stored; it is read from Stripe by session id.)
-Catalog categories: beds, dining tables, couches, sofa sets, chandeliers, chairs, cushions, rugs, TV tables, console tables, lamps, candles, coffee tables, side tables, night stands, drawer chests, mirrors, curtains, accent chairs, vases.
+Catalog categories (merged from 20 into 9 on 2026-10-21; the old ones became hashtags on products, stored in a `tags` field): Beds, Dining Tables, Sofas (#couch #sofa-set), Chairs (#dining-chair #accent-chair #rocking-chair #counter-stool), Consoles & Storage (#tv-stand #console-table #drawer-chest), Accent Tables (#coffee-table #side-table #night-stand), Lighting (#lamp #chandelier), Soft Furnishings (#cushion #rug #curtain), Decor (#mirror #vase #candle).
 
 ## Phases
 

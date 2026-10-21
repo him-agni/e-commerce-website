@@ -6,6 +6,7 @@ import {
   CATEGORIES_QUERY,
   CATEGORY_BY_SLUG_QUERY,
   CATEGORY_SLUGS_QUERY,
+  CATEGORY_TAGS_QUERY,
   FEATURED_PRODUCTS_QUERY,
   PRODUCT_BY_SLUG_QUERY,
   PRODUCT_SLUGS_QUERY,
@@ -76,4 +77,18 @@ export async function getAssistantCatalog() {
   cacheLife("minutes");
   cacheTag("products");
   return client.fetch(ASSISTANT_CATALOG_QUERY);
+}
+
+/** Each category with the hashtags its products use, e.g. chairs -> accent-chair, dining-chair. */
+export async function getCategoryTags() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("categories", "products");
+  const categories = await client.fetch(CATEGORY_TAGS_QUERY);
+  return categories.map((c) => ({
+    _id: c._id,
+    title: c.title,
+    slug: c.slug,
+    tags: (c.tags ?? []).filter((t): t is string => !!t).sort(),
+  }));
 }

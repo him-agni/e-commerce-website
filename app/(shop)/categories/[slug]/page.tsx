@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ProductGrid } from "@/components/product/product-grid";
+import { CategoryListing } from "@/components/category/category-listing";
 import { ProductGridSkeleton } from "@/components/product/skeletons";
 import { Container } from "@/components/site/container";
-import {
-  getCategory,
-  getCategorySlugs,
-  getProductsByCategory,
-} from "@/lib/sanity/data";
+import { getCategory, getCategorySlugs } from "@/lib/sanity/data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -43,41 +37,5 @@ export default function CategoryPage({ params }: Props) {
 
 async function CategoryContent({ params }: Props) {
   const { slug } = await params;
-  const [category, products] = await Promise.all([
-    getCategory(slug),
-    getProductsByCategory(slug),
-  ]);
-  if (!category) notFound();
-
-  return (
-    <>
-      <nav aria-label="Breadcrumb" className="blur-in mb-6 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground">{category.title}</span>
-      </nav>
-      <h1
-        className="blur-in mb-2 text-4xl"
-        style={{ "--delay": "150ms" } as React.CSSProperties}
-      >
-        {category.title}
-      </h1>
-      {category.description && (
-        <p
-          className="blur-in mb-10 max-w-xl text-muted-foreground"
-          style={{ "--delay": "300ms" } as React.CSSProperties}
-        >
-          {category.description}
-        </p>
-      )}
-      <ProductGrid
-        products={products}
-        emptyMessage="Nothing in this category yet. Check back soon."
-        headingLevel={2}
-        priorityCount={4}
-      />
-    </>
-  );
+  return <CategoryListing slug={slug} />;
 }

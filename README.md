@@ -1,12 +1,14 @@
 # My Farmhouse
 
-A modern farmhouse furniture store built as a portfolio project. Browse a catalog of 60 products across 20 categories, pick a color, size and design, pay with Stripe (test mode), and ask an AI assistant for help choosing.
+A modern farmhouse furniture store built as a portfolio project. Browse a catalog of 60 products in 9 categories, pick a color, size and design, pay with Stripe (test mode), and ask an AI assistant for help choosing.
 
 **Nothing here takes real money.** Stripe runs in test mode only, and the app refuses a live Stripe key.
 
 ## Features
 
-- **Storefront:** home page, category pages, and product pages where choosing a color, size or design updates the price, stock message and photo.
+- **Storefront:** an animated home page, category pages, and product pages where choosing a color, size or design updates the price, stock message and photo.
+- **Hashtags:** inside a category, products are grouped by hashtags such as `#accent-chair` or `#tv-stand`. Each shows on the product and its card, has its own filter pill and shareable page (`/categories/chairs/accent-chair`), and appears in the Shop menu.
+- **Product page extras:** a quantity stepper (limited by stock), a share button (the phone's share sheet, or copy-link on desktop), and a wishlist heart. The wishlist is saved in the visitor's browser only, on purpose: the Sanity dataset is public, so nothing personal goes there.
 - **Accounts:** sign up and sign in with Clerk. Checkout requires an account.
 - **Cart and checkout:** cart kept in the browser, with price and stock re-checked against the catalog on every view. Stripe Checkout sessions are built on the server from catalog prices, never from the browser.
 - **Orders:** a Stripe webhook records each paid order, creates the customer, and reduces stock, all in one safe-to-repeat step. Signed-in shoppers see their orders under **My orders**.
@@ -78,7 +80,7 @@ It prints a `whsec_…` signing secret; put it in `.env.local` as `STRIPE_WEBHOO
 | `npm run seed` | creates categories, products and photos in Sanity; safe to re-run |
 | `npm run check-env` | validates `.env.local` without printing secrets |
 
-The seed script uses Unsplash's free API, which allows 50 requests an hour. If it stops with a rate-limit message, wait an hour and run it again; finished work is kept.
+The seed script uses Unsplash's free API, which allows 50 requests an hour. Its data (`scripts/seed-data.mjs`) is organized as category, then hashtag groups, then products. If it stops with a rate-limit message, wait an hour and run it again; finished work is kept.
 
 ## How it fits together
 
@@ -89,7 +91,7 @@ The seed script uses Unsplash's free API, which allows 50 requests an hour. If i
 - **The assistant.** `POST /api/chat` streams Gemini replies. It can only call four server-side tools (search, product details, categories, my orders). The signed-in user comes from the server session, never from the model or the browser. Requests are rate limited and validated, and replies are rendered without raw HTML.
 
 ```
-app/(shop)/…        storefront pages, cart, orders, sign in/up
+app/(shop)/…        storefront pages (home, categories and hashtag pages, products), cart, wishlist, orders, sign in/up
 app/api/…           checkout, Stripe webhook, Sanity refresh webhook, chat
 app/studio/…        embedded Sanity Studio
 components/…        UI (site, product, cart, assistant, shadcn/ui)

@@ -4,8 +4,9 @@ import { Popover } from "@base-ui/react/popover";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { tagText } from "@/lib/tags";
 
-type Category = { _id: string; title: string; slug: string };
+type Category = { _id: string; title: string; slug: string; tags: string[] };
 
 /** "Shop" menu listing every category. Keyboard and screen-reader behavior comes from Base UI's popover. */
 export function CategoriesMenu({ categories }: { categories: Category[] }) {
@@ -34,16 +35,31 @@ export function CategoriesMenu({ categories }: { categories: Category[] }) {
             >
               All furniture
             </Link>
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
               {categories.map((category) => (
                 <li key={category._id}>
                   <Link
                     href={`/categories/${category.slug}`}
                     onClick={close}
-                    className="block rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="block rounded-md px-2 py-1 font-heading text-base transition-colors hover:bg-muted"
                   >
                     {category.title}
                   </Link>
+                  {category.tags.length > 1 && (
+                    <ul className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 px-2">
+                      {category.tags.map((tag) => (
+                        <li key={tag}>
+                          <Link
+                            href={`/categories/${category.slug}/${tag}`}
+                            onClick={close}
+                            className="text-xs text-muted-foreground transition-colors hover:text-wood"
+                          >
+                            {tagText(tag)}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

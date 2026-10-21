@@ -4,10 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { MAX_QUANTITY_PER_LINE } from "@/lib/cart/limits";
 import { useCart } from "@/lib/cart/store";
 import { formatPrice, variantLabel } from "@/lib/format";
+import { tagText } from "@/lib/tags";
 import { cn } from "@/lib/utils";
 import { urlFor } from "@/sanity/lib/image";
+import { QuantityStepper } from "./quantity-stepper";
+import { ShareButton } from "./share-button";
+import { WishlistButton } from "./wishlist-button";
 import type { PRODUCT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 
 type Product = NonNullable<PRODUCT_BY_SLUG_QUERY_RESULT>;
@@ -76,8 +81,13 @@ export function ProductDetails({ product }: { product: Product }) {
   const inCart = useCart(
     (state) => state.items.find((i) => i.sku === variant.sku)?.quantity ?? 0,
   );
-  const [justAdded, setJustAdded] = useState<string | null>(null);
-  const atMax = inCart >= variant.stock;
+  const [justAdded, setJustAdded] = useState<{ sku: string; count: number } | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  // How many more can go in the cart: limited by stock and by what checkout accepts per line.
+  const room = Math.max(0, Math.min(variant.stock, MAX_QUANTITY_PER_LINE) - inCart);
+  const atMax = room === 0;
+  // Selecting a different variant (or the cart changing) can shrink what is allowed.
+  const qty = Math.min(quantity, Math.max(room, 1));
 
   function addToCart() {
     const cover = gallery[0];
@@ -89,8 +99,11 @@ export function ProductDetails({ product }: { product: Product }) {
       imageUrl: cover ? urlFor(cover.image).width(300).url() : null,
       unitPrice: variant.price,
       stock: variant.stock,
-    });
-    if (added > 0) setJustAdded(variant.sku);
+    }, qty);
+    if (added > 0) {
+      setJustAdded({ sku: variant.sku, count: added });
+      setQuantity(1);
+    }
   }
 
   function imageKeyFor(next: Variant) {
@@ -171,6 +184,20 @@ export function ProductDetails({ product }: { product: Product }) {
       >
         <div>
           <h1 className="text-3xl sm:text-4xl">{product.name}</h1>
+          {product.tags && product.tags.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Hashtags">
+              {product.tags.map((tag) => (
+                <li key={tag}>
+                  <Link
+                    href={`/categories/${product.category.slug}/${tag}`}
+                    className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent"
+                  >
+                    {tagText(tag)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-3 text-2xl">{formatPrice(variant.price)}</p>
           <p
             className={cn("mt-1 text-sm", stock.className)}
@@ -221,24 +248,38 @@ export function ProductDetails({ product }: { product: Product }) {
           );
         })}
 
-        <div>
-          <Button
-            size="lg"
-            className="h-11 w-full text-base"
-            disabled={variant.stock === 0 || atMax}
-            onClick={addToCart}
-          >
-            {variant.stock === 0
-              ? "Out of stock"
-              : atMax
-                ? "All available units are in your cart"
-                : "Add to cart"}
-          </Button>
-          <p className="mt-2 min-h-5 text-sm" aria-live="polite">
+        <div className="space-y-4">
+          {variant.stock > 0 && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">Quantity</span>
+              <QuantityStepper value={qty} max={room} onChange={setQuantity} disabled={atMax} />
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button
+              size="lg"
+              className="h-11 flex-1 text-base"
+              disabled={variant.stock === 0 || atMax}
+              onClick={addToCart}
+            >
+              {variant.stock === 0
+                ? "Out of stock"
+                : atMax
+                  ? "All available units are in your cart"
+                  : qty > 1
+                    ? `Add ${qty} to cart`
+                    : "Add to cart"}
+            </Button>
+            <WishlistButton slug={product.slug} name={product.name} />
+            <ShareButton slug={product.slug} name={product.name} />
+          </div>
+          <p className="min-h-5 text-sm" aria-live="polite">
             {inCart > 0 && (
               <>
                 <span className="text-muted-foreground">
-                  {justAdded === variant.sku ? "Added to your cart. " : ""}
+                  {justAdded?.sku === variant.sku
+                    ? `Added ${justAdded.count} to your cart. `
+                    : ""}
                   {inCart} in cart.{" "}
                 </span>
                 <Link href="/cart" className="underline underline-offset-4">

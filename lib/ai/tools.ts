@@ -5,6 +5,7 @@ import { formatPrice, variantLabel } from "@/lib/format";
 import {
   getAssistantCatalog,
   getCategories,
+  getCategoryTags,
   getProduct,
 } from "@/lib/sanity/data";
 import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries";
@@ -17,6 +18,8 @@ export type ProductHit = {
   name: string;
   url: string;
   category: string;
+  /** Hashtags like #accent-chair that group products inside the category. */
+  hashtags: string[];
   price: string;
   inStock: boolean;
   material: string | null;
@@ -70,6 +73,7 @@ export function createAssistantTools({ userId }: { userId: string | null }) {
             name: p.name,
             url: `/products/${p.slug}`,
             category: p.category.title,
+            hashtags: (p.tags ?? []).filter((t): t is string => !!t).map((t) => `#${t}`),
             price:
               p.minPrice === p.maxPrice
                 ? formatPrice(p.minPrice)
@@ -110,6 +114,7 @@ export function createAssistantTools({ userId }: { userId: string | null }) {
           name: product.name,
           url: `/products/${product.slug}`,
           category: product.category.title,
+          hashtags: (product.tags ?? []).map((t) => `#${t}`),
           material: product.material,
           description: product.description,
           variants: product.variants.slice(0, 30).map((v) => ({
@@ -122,14 +127,15 @@ export function createAssistantTools({ userId }: { userId: string | null }) {
     }),
 
     listCategories: tool({
-      description: "List every product category in the store.",
+      description: "List every product category in the store, with the hashtags used inside each.",
       inputSchema: z.object({}),
       execute: async () => {
-        const categories = await getCategories();
+        const [categories, withTags] = await Promise.all([getCategories(), getCategoryTags()]);
         return categories.map((c) => ({
           name: c.title,
           url: `/categories/${c.slug}`,
           description: c.description,
+          hashtags: (withTags.find((x) => x.slug === c.slug)?.tags ?? []).map((t) => `#${t}`),
         }));
       },
     }),

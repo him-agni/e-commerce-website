@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ProductHit } from "@/lib/ai/tools";
 import { cn } from "@/lib/utils";
-import { MessageContent } from "./message-content";
+import { MessageContent, type KnownLinks } from "./message-content";
 import { ProductHits } from "./product-hits";
 
 const MAX_LENGTH = 500;
@@ -24,6 +24,30 @@ const TOOL_LABELS: Record<string, string> = {
   "tool-listCategories": "Looking at categories…",
   "tool-getMyOrders": "Looking up your orders…",
 };
+
+/** Names and real addresses of every product or category the assistant has looked up in this chat. */
+function collectLinks(messages: ReturnType<typeof useChat>["messages"]): KnownLinks {
+  const links = new Map<string, string>();
+  const add = (name: unknown, url: unknown) => {
+    if (typeof name === "string" && typeof url === "string" && url.startsWith("/")) {
+      links.set(name.toLowerCase().trim(), url);
+    }
+  };
+  for (const message of messages) {
+    for (const part of message.parts) {
+      if (!part.type.startsWith("tool-") || !("state" in part) || part.state !== "output-available") continue;
+      const output = part.output as unknown;
+      if (Array.isArray(output)) {
+        for (const item of output) add(item?.name, item?.url); // listCategories
+      } else if (output && typeof output === "object") {
+        const o = output as { products?: { name?: unknown; url?: unknown }[]; name?: unknown; url?: unknown };
+        for (const product of o.products ?? []) add(product.name, product.url); // searchProducts
+        add(o.name, o.url); // getProductDetails
+      }
+    }
+  }
+  return links;
+}
 
 /** Our API returns {"error": "..."} for rate limits and bad input; anything else is a model failure. */
 function friendlyError(message: string | undefined) {
@@ -48,6 +72,7 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const endRef = useRef<HTMLDivElement>(null);
 
   const busy = status === "submitted" || status === "streaming";
+  const links = collectLinks(messages);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -147,7 +172,7 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
                   </p>
                 ) : (
                   <div key={key} className="max-w-[92%] rounded-xl bg-muted px-3 py-2">
-                    <MessageContent text={part.text} />
+                    <MessageContent text={part.text} links={links} />
                   </div>
                 );
               }

@@ -1,21 +1,25 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/site";
-import { getCategorySlugs, getProductSlugs } from "@/lib/sanity/data";
+import { getCategoryTags, getProductSlugs } from "@/lib/sanity/data";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [categorySlugs, productSlugs] = await Promise.all([
-    getCategorySlugs(),
-    getProductSlugs(),
-  ]);
+  const [categories, productSlugs] = await Promise.all([getCategoryTags(), getProductSlugs()]);
 
   return [
     { url: siteUrl, changeFrequency: "weekly", priority: 1 },
     { url: `${siteUrl}/products`, changeFrequency: "daily", priority: 0.9 },
-    ...categorySlugs.map((slug) => ({
-      url: `${siteUrl}/categories/${slug}`,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
+    ...categories.flatMap((category) => [
+      {
+        url: `${siteUrl}/categories/${category.slug}`,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      },
+      ...category.tags.map((tag) => ({
+        url: `${siteUrl}/categories/${category.slug}/${tag}`,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      })),
+    ]),
     ...productSlugs.map((slug) => ({
       url: `${siteUrl}/products/${slug}`,
       changeFrequency: "weekly" as const,

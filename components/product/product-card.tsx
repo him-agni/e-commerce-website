@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
+import { tagText } from "@/lib/tags";
 import { urlFor } from "@/sanity/lib/image";
 import type { FEATURED_PRODUCTS_QUERY_RESULT } from "@/sanity/types";
 
@@ -42,8 +43,11 @@ export function ProductCard({
         )}
       </div>
       <div className="mt-3 space-y-0.5">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">
-          {product.category.title}
+        <p className="text-xs tracking-wider text-muted-foreground">
+          <span className="uppercase">{product.category.title}</span>
+          {product.tags?.[0] && (
+            <span className="text-wood"> &middot; {tagText(product.tags[0])}</span>
+          )}
         </p>
         <Heading className="font-heading text-lg leading-snug">{product.name}</Heading>
         <p className="text-sm text-muted-foreground">

@@ -511,6 +511,16 @@
         },
         "optional": false
       },
+      "tags": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "string"
+          }
+        },
+        "optional": true
+      },
       "material": {
         "type": "objectAttribute",
         "value": {

@@ -27,7 +27,7 @@ export default async function Home() {
   const heroImage =
     imageOf("homestead-3-piece-set") ?? featured[0]?.image ?? products[0]?.image ?? null;
   const whyImage =
-    categories.find((c) => c.slug === "coffee-tables")?.image ??
+    categories.find((c) => c.slug === "accent-tables")?.image ??
     imageOf("ember-round-coffee-table") ??
     products[1]?.image ??
     null;

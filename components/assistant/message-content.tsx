@@ -7,13 +7,19 @@ import type { ReactNode } from "react";
 
 const INLINE = /\[([^\]]+)\]\((\/[^)\s]*)\)|\*\*([^*]+)\*\*/g;
 
-function renderInline(text: string): ReactNode[] {
+/** Product and category names the assistant has looked up, mapped to their real addresses (keys lowercased). */
+export type KnownLinks = ReadonlyMap<string, string>;
+
+function renderInline(text: string, known?: KnownLinks): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(INLINE)) {
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
-    const [, label, href, bold] = match;
+    const [, label, rawHref, bold] = match;
+    // The model sometimes mistypes an address (wrong capital letter, an extra word). When the link text is a
+    // product we looked up, trust our own address over the one it typed.
+    const href = (label && known?.get(label.toLowerCase().trim())) || rawHref;
     if (label && href) {
       // "//host" would be a protocol-relative external link, so treat it as plain text.
       nodes.push(
@@ -31,7 +37,7 @@ function renderInline(text: string): ReactNode[] {
       );
     } else if (bold) {
       // The model sometimes wraps a link in bold: **[Name](/products/x)**.
-      nodes.push(<strong key={index}>{renderInline(bold)}</strong>);
+      nodes.push(<strong key={index}>{renderInline(bold, known)}</strong>);
     }
     last = index + match[0].length;
   }
@@ -39,7 +45,7 @@ function renderInline(text: string): ReactNode[] {
   return nodes;
 }
 
-export function MessageContent({ text }: { text: string }) {
+export function MessageContent({ text, links }: { text: string; links?: KnownLinks }) {
   const blocks: ReactNode[] = [];
   let bullets: string[] = [];
   let numbered = false;
@@ -54,7 +60,7 @@ export function MessageContent({ text }: { text: string }) {
         className={numbered ? "list-decimal space-y-1 pl-5" : "list-disc space-y-1 pl-5"}
       >
         {bullets.map((item, i) => (
-          <li key={i}>{renderInline(item)}</li>
+          <li key={i}>{renderInline(item, links)}</li>
         ))}
       </List>,
     );
@@ -62,7 +68,7 @@ export function MessageContent({ text }: { text: string }) {
   };
   const flushParagraph = () => {
     if (paragraph.length === 0) return;
-    blocks.push(<p key={`p-${blocks.length}`}>{renderInline(paragraph.join(" "))}</p>);
+    blocks.push(<p key={`p-${blocks.length}`}>{renderInline(paragraph.join(" "), links)}</p>);
     paragraph = [];
   };
 

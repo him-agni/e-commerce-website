@@ -104,6 +104,7 @@ export type Product = {
   slug: Slug;
   description?: string;
   category: CategoryReference;
+  tags?: Array<string>;
   material?: string;
   images: Array<{
     asset?: SanityImageAssetReference;
@@ -322,7 +323,7 @@ export type CATEGORY_BY_SLUG_QUERY_RESULT = {
 
 // Source: lib/sanity/queries.ts
 // Variable: FEATURED_PRODUCTS_QUERY
-// Query: *[_type == "product" && featured == true] | order(name asc) [0...8] {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+// Query: *[_type == "product" && featured == true] | order(name asc) [0...8] {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  tags,  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
 export type FEATURED_PRODUCTS_QUERY_RESULT = Array<{
   _id: string;
   name: string;
@@ -339,6 +340,7 @@ export type FEATURED_PRODUCTS_QUERY_RESULT = Array<{
     title: string;
     slug: string;
   };
+  tags: Array<string> | null;
   minPrice: number;
   maxPrice: number;
   inStock: boolean;
@@ -346,7 +348,7 @@ export type FEATURED_PRODUCTS_QUERY_RESULT = Array<{
 
 // Source: lib/sanity/queries.ts
 // Variable: ALL_PRODUCTS_QUERY
-// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  tags,  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
 export type ALL_PRODUCTS_QUERY_RESULT = Array<{
   _id: string;
   name: string;
@@ -363,6 +365,7 @@ export type ALL_PRODUCTS_QUERY_RESULT = Array<{
     title: string;
     slug: string;
   };
+  tags: Array<string> | null;
   minPrice: number;
   maxPrice: number;
   inStock: boolean;
@@ -370,7 +373,7 @@ export type ALL_PRODUCTS_QUERY_RESULT = Array<{
 
 // Source: lib/sanity/queries.ts
 // Variable: PRODUCTS_BY_CATEGORY_QUERY
-// Query: *[_type == "product" && category->slug.current == $slug] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+// Query: *[_type == "product" && category->slug.current == $slug] | order(name asc) {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  tags,  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
 export type PRODUCTS_BY_CATEGORY_QUERY_RESULT = Array<{
   _id: string;
   name: string;
@@ -387,6 +390,7 @@ export type PRODUCTS_BY_CATEGORY_QUERY_RESULT = Array<{
     title: string;
     slug: string;
   };
+  tags: Array<string> | null;
   minPrice: number;
   maxPrice: number;
   inStock: boolean;
@@ -394,7 +398,7 @@ export type PRODUCTS_BY_CATEGORY_QUERY_RESULT = Array<{
 
 // Source: lib/sanity/queries.ts
 // Variable: PRODUCT_BY_SLUG_QUERY
-// Query: *[_type == "product" && slug.current == $slug][0] {  _id,  name,  "slug": slug.current,  description,  material,  images,  "category": category->{ title, "slug": slug.current },  designs[] { _key, name, image },  variants[] { _key, color, size, design, price, stock, sku, image }}
+// Query: *[_type == "product" && slug.current == $slug][0] {  _id,  name,  "slug": slug.current,  description,  material,  images,  "category": category->{ title, "slug": slug.current },  tags,  designs[] { _key, name, image },  variants[] { _key, color, size, design, price, stock, sku, image }}
 export type PRODUCT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   name: string;
@@ -413,6 +417,7 @@ export type PRODUCT_BY_SLUG_QUERY_RESULT = {
     title: string;
     slug: string;
   };
+  tags: Array<string> | null;
   designs: Array<{
     _key: string;
     name: string;
@@ -507,7 +512,7 @@ export type ORDERS_BY_USER_QUERY_RESULT = Array<{
 
 // Source: lib/sanity/queries.ts
 // Variable: ASSISTANT_CATALOG_QUERY
-// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  description,  material,  "image": images[0],  "category": category->{ title, "slug": slug.current },  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0,  "colors": array::unique(variants[defined(color)].color),  "sizes": array::unique(variants[defined(size)].size),  "designs": array::unique(variants[defined(design)].design)}
+// Query: *[_type == "product"] | order(name asc) {  _id,  name,  "slug": slug.current,  description,  material,  "image": images[0],  "category": category->{ title, "slug": slug.current },  tags,  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0,  "colors": array::unique(variants[defined(color)].color),  "sizes": array::unique(variants[defined(size)].size),  "designs": array::unique(variants[defined(design)].design)}
 export type ASSISTANT_CATALOG_QUERY_RESULT = Array<{
   _id: string;
   name: string;
@@ -526,6 +531,7 @@ export type ASSISTANT_CATALOG_QUERY_RESULT = Array<{
     title: string;
     slug: string;
   };
+  tags: Array<string> | null;
   minPrice: number;
   maxPrice: number;
   inStock: boolean;
@@ -534,20 +540,57 @@ export type ASSISTANT_CATALOG_QUERY_RESULT = Array<{
   designs: Array<string | null>;
 }>;
 
+// Source: lib/sanity/queries.ts
+// Variable: CATEGORY_TAGS_QUERY
+// Query: *[_type == "category" && defined(slug.current)] | order(order asc) {  _id,  title,  "slug": slug.current,  "tags": array::unique(*[_type == "product" && references(^._id)].tags[])}
+export type CATEGORY_TAGS_QUERY_RESULT = Array<{
+  _id: string;
+  title: string;
+  slug: string;
+  tags: Array<string | null>;
+}>;
+
+// Source: lib/sanity/queries.ts
+// Variable: PRODUCTS_BY_SLUGS_QUERY
+// Query: *[_type == "product" && slug.current in $slugs] {  _id,  name,  "slug": slug.current,  "image": images[0],  "category": category->{ title, "slug": slug.current },  tags,  "minPrice": math::min(variants[].price),  "maxPrice": math::max(variants[].price),  "inStock": count(variants[stock > 0]) > 0}
+export type PRODUCTS_BY_SLUGS_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  slug: string;
+  image: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+    _key: string;
+  } | null;
+  category: {
+    title: string;
+    slug: string;
+  };
+  tags: Array<string> | null;
+  minPrice: number;
+  maxPrice: number;
+  inStock: boolean;
+}>;
+
 // Query TypeMap
 declare global {
   interface SanityQueries {
     '*[_type == "category"] | order(order asc) {\n  _id,\n  title,\n  "slug": slug.current,\n  description,\n  image\n}': CATEGORIES_QUERY_RESULT;
     '*[_type == "category" && slug.current == $slug][0] {\n  _id,\n  title,\n  "slug": slug.current,\n  description\n}': CATEGORY_BY_SLUG_QUERY_RESULT;
-    '*[_type == "product" && featured == true] | order(name asc) [0...8] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': FEATURED_PRODUCTS_QUERY_RESULT;
-    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': ALL_PRODUCTS_QUERY_RESULT;
-    '*[_type == "product" && category->slug.current == $slug] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': PRODUCTS_BY_CATEGORY_QUERY_RESULT;
-    '*[_type == "product" && slug.current == $slug][0] {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  images,\n  "category": category->{ title, "slug": slug.current },\n  designs[] { _key, name, image },\n  variants[] { _key, color, size, design, price, stock, sku, image }\n}': PRODUCT_BY_SLUG_QUERY_RESULT;
+    '*[_type == "product" && featured == true] | order(name asc) [0...8] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': FEATURED_PRODUCTS_QUERY_RESULT;
+    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': ALL_PRODUCTS_QUERY_RESULT;
+    '*[_type == "product" && category->slug.current == $slug] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': PRODUCTS_BY_CATEGORY_QUERY_RESULT;
+    '*[_type == "product" && slug.current == $slug][0] {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  images,\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  designs[] { _key, name, image },\n  variants[] { _key, color, size, design, price, stock, sku, image }\n}': PRODUCT_BY_SLUG_QUERY_RESULT;
     '*[_type == "product" && defined(slug.current)].slug.current': PRODUCT_SLUGS_QUERY_RESULT;
     '*[_type == "category" && defined(slug.current)].slug.current': CATEGORY_SLUGS_QUERY_RESULT;
     '*[_type == "product" && count(variants[sku in $skus]) > 0] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }\n}': VARIANTS_BY_SKU_QUERY_RESULT;
     '*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  status,\n  total,\n  createdAt,\n  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },\n  stripeSessionId\n}': ORDERS_BY_USER_QUERY_RESULT;
-    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0,\n  "colors": array::unique(variants[defined(color)].color),\n  "sizes": array::unique(variants[defined(size)].size),\n  "designs": array::unique(variants[defined(design)].design)\n}': ASSISTANT_CATALOG_QUERY_RESULT;
+    '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0,\n  "colors": array::unique(variants[defined(color)].color),\n  "sizes": array::unique(variants[defined(size)].size),\n  "designs": array::unique(variants[defined(design)].design)\n}': ASSISTANT_CATALOG_QUERY_RESULT;
+    '*[_type == "category" && defined(slug.current)] | order(order asc) {\n  _id,\n  title,\n  "slug": slug.current,\n  "tags": array::unique(*[_type == "product" && references(^._id)].tags[])\n}': CATEGORY_TAGS_QUERY_RESULT;
+    '*[_type == "product" && slug.current in $slugs] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': PRODUCTS_BY_SLUGS_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

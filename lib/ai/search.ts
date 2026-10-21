@@ -8,6 +8,8 @@ export type CatalogProduct = {
   description: string | null;
   material: string | null;
   category: { title: string; slug: string };
+  /** Hashtags such as "tv-stand" that group products inside a category. */
+  tags: (string | null)[] | null;
   minPrice: number; // USD cents
   maxPrice: number;
   inStock: boolean;
@@ -127,12 +129,14 @@ export function rankProducts<T extends CatalogProduct>(
     .map((p) => {
       const name = tokens(p.name);
       const category = tokens(`${p.category.title} ${p.category.slug}`);
+      const tagWords = tokens((p.tags ?? []).filter(Boolean).join(" "));
       const material = tokens(p.material ?? "");
       const options = tokens([...p.colors, ...p.sizes, ...p.designs].filter(Boolean).join(" "));
       const description = tokens(p.description ?? "");
 
       const termScore = (term: string) =>
         (hasTerm(name, term) ? 4 : 0) +
+        (hasTerm(tagWords, term) ? 4 : 0) +
         (hasTerm(category, term) ? 4 : 0) +
         (hasTerm(material, term) ? 2 : 0) +
         (hasTerm(options, term) ? 2 : 0) +
