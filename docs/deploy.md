@@ -84,6 +84,10 @@ After the redeploys finish, walk through this on the deployed URL:
 - [ ] The assistant answers ("Do you have a linen couch?") and, when signed in, lists your orders.
 - [ ] `/sitemap.xml` and `/robots.txt` load.
 
+## Data privacy
+
+The Sanity dataset is public-read (the free plan only offers public datasets, and the storefront needs to read it). The project id is visible in the site's page source, so treat everything in Sanity as public. Order and customer records therefore hold identifiers only. Names, emails and shipping addresses stay in Stripe and Clerk. Do not add personal fields to the Sanity schemas. Sanity keeps document history for 3 days on the free plan, and that history is readable by anyone who knows a document id and a time, so anything written by mistake stays recoverable for those 3 days even after it is deleted.
+
 ## Free-tier limits
 
 Looked up on 2026-10-21. Providers change these often, so check the linked pages before relying on a number.

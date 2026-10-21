@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { Container } from "@/components/site/container";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
+import { getShipTo } from "@/lib/order-shipping";
 import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries";
 import { cn } from "@/lib/utils";
 import { freshClient } from "@/sanity/lib/client";
@@ -42,6 +43,14 @@ async function OrderList() {
   // Orders must be exact and private to this user, so this read is never cached.
   const orders = await freshClient.fetch(ORDERS_BY_USER_QUERY, { userId });
 
+  // Addresses are not stored in Sanity (it is publicly readable); fetch them from Stripe for the
+  // most recent orders, checking each belongs to this user.
+  const shipTo = await Promise.all(
+    orders.map((order, index) =>
+      index < 10 ? getShipTo(order.stripeSessionId, userId) : Promise.resolve(null),
+    ),
+  );
+
   if (orders.length === 0) {
     return (
       <div className="py-12 text-center">
@@ -61,7 +70,7 @@ async function OrderList() {
 
   return (
     <ul className="space-y-6">
-      {orders.map((order) => (
+      {orders.map((order, index) => (
         <li key={order._id} className="rounded-lg border bg-card">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
             <div>
@@ -104,11 +113,11 @@ async function OrderList() {
               </li>
             ))}
           </ul>
-          {order.shippingAddress?.line1 && (
+          {shipTo[index] && (
             <p className="border-t px-5 py-3 text-sm text-muted-foreground">
-              Ships to {order.shippingAddress.name ? `${order.shippingAddress.name}, ` : ""}
-              {order.shippingAddress.line1}, {order.shippingAddress.city},{" "}
-              {order.shippingAddress.state} {order.shippingAddress.postalCode}
+              Ships to {shipTo[index].name ? `${shipTo[index].name}, ` : ""}
+              {shipTo[index].line1}, {shipTo[index].city}, {shipTo[index].state}{" "}
+              {shipTo[index].postalCode}
             </p>
           )}
         </li>

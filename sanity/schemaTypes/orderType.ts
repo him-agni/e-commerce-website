@@ -4,6 +4,9 @@ export const orderType = defineType({
   name: "order",
   title: "Order",
   type: "document",
+  description:
+    "This dataset is publicly readable, so no personal details are stored on orders. " +
+    "The shipping address and email live in Stripe, looked up by Stripe session id when needed.",
   fields: [
     defineField({
       name: "orderNumber",
@@ -61,19 +64,6 @@ export const orderType = defineType({
         layout: "radio",
       },
       validation: (rule) => rule.required(),
-    }),
-    defineField({
-      name: "shippingAddress",
-      type: "object",
-      fields: [
-        defineField({ name: "name", type: "string" }),
-        defineField({ name: "line1", type: "string" }),
-        defineField({ name: "line2", type: "string" }),
-        defineField({ name: "city", type: "string" }),
-        defineField({ name: "state", type: "string" }),
-        defineField({ name: "postalCode", type: "string" }),
-        defineField({ name: "country", type: "string", initialValue: "US" }),
-      ],
     }),
     defineField({ name: "stripeSessionId", type: "string" }),
     defineField({ name: "createdAt", type: "datetime" }),

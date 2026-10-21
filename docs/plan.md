@@ -22,8 +22,8 @@ Next.js (App Router, TypeScript), Tailwind + shadcn/ui, Sanity (+ embedded Studi
 - **category**: title, slug, description, image.
 - **product**: name, slug, description, category (ref), material, images, featured, `designs[]` (name, image), `variants[]`.
 - **variant** (object inside product): color, size, design (optional), price (USD cents), stock, sku.
-- **customer**: clerkUserId, email, name, stripeCustomerId.
-- **order**: orderNumber, items (snapshot of name, variant, price at purchase), total, status (paid, shipped, delivered, cancelled), customer (ref), shipping address, stripeSessionId.
+- **customer**: clerkUserId, stripeCustomerId. (Email and name were dropped on 2026-10-21: the Sanity dataset is publicly readable, so personal data stays in Stripe and Clerk.)
+- **order**: orderNumber, items (snapshot of name, variant, price at purchase), total, status (paid, shipped, delivered, cancelled), customer (ref), stripeSessionId. (The shipping address is not stored; it is read from Stripe by session id.)
 Catalog categories: beds, dining tables, couches, sofa sets, chandeliers, chairs, cushions, rugs, TV tables, console tables, lamps, candles, coffee tables, side tables, night stands, drawer chests, mirrors, curtains, accent chairs, vases.
 
 ## Phases

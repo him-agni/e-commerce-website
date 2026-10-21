@@ -4,15 +4,16 @@ export const customerType = defineType({
   name: "customer",
   title: "Customer",
   type: "document",
+  description:
+    "Identifiers only. This dataset is publicly readable, so names, emails and addresses are " +
+    "never stored here; they stay in Stripe and Clerk.",
   fields: [
     defineField({
       name: "clerkUserId",
       type: "string",
       validation: (rule) => rule.required(),
     }),
-    defineField({ name: "email", type: "string" }),
-    defineField({ name: "name", type: "string" }),
     defineField({ name: "stripeCustomerId", type: "string" }),
   ],
-  preview: { select: { title: "name", subtitle: "email" } },
+  preview: { select: { title: "clerkUserId", subtitle: "stripeCustomerId" } },
 });

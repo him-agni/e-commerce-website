@@ -82,7 +82,7 @@ The seed script uses Unsplash's free API, which allows 50 requests an hour. If i
 
 ## How it fits together
 
-- **Sanity is the database.** Products (with variants and designs), categories, customers and orders all live in one dataset. Prices are whole US cents.
+- **Sanity is the database, and it is publicly readable.** Products (with variants and designs), categories, customers and orders live in one dataset, and anyone who knows the project id (it is in the site's page source) can read it without logging in. So **no personal data is stored there**: orders hold only the order number, items, totals, status and the Clerk and Stripe ids. Names, emails and shipping addresses stay in Stripe, and the My orders page looks the address up there for the signed-in owner. Prices are whole US cents.
 - **The server decides prices.** The browser's cart holds only SKUs and quantities. `POST /api/checkout` re-reads price and stock from Sanity and builds the Stripe session itself.
 - **Orders come from Stripe, not the browser.** `POST /api/webhooks/stripe` verifies the signature, then creates the order, upserts the customer and decrements stock in one Sanity transaction. The order id comes from the Stripe session id, so a repeated delivery cannot double-count.
 - **Caching.** Catalog reads are cached with tags. Publishing in Studio calls `POST /api/revalidate` (a signed Sanity webhook), and a paid order refreshes the `products` tag, so pages never stay stale for long.

@@ -79,7 +79,7 @@ export const ORDERS_BY_USER_QUERY = defineQuery(`*[_type == "order" && customer-
   total,
   createdAt,
   items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },
-  shippingAddress
+  stripeSessionId
 }`);
 
 // Compact view of the whole catalog for the shopping assistant's search (small catalog, ranked in code).

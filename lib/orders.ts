@@ -15,7 +15,7 @@ const isConflict = (error: unknown) => (error as SanityError)?.statusCode === 40
 
 /**
  * Records a paid Checkout Session in Sanity: creates the customer (if new) and the order,
- * and decrements stock for each variant, all in one transaction.
+ * and decrements stock for each variant, all in one transaction. Stores no personal details.
  *
  * Safe to call repeatedly for the same session. The order id is derived from the session id
  * and created with `create` (which fails if it exists), so a retry or a concurrent duplicate
@@ -57,11 +57,9 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
 
   const variants = await lookupVariants(rows.map((row) => row.sku));
 
+  // The Sanity dataset is publicly readable, so only identifiers go in it. The buyer's name,
+  // email and shipping address stay in Stripe and are looked up there when needed.
   const userId = session.client_reference_id ?? session.metadata?.clerkUserId ?? null;
-  const shipping = session.collected_information?.shipping_details;
-  const address = shipping?.address;
-  const name = shipping?.name ?? session.customer_details?.name ?? undefined;
-  const email = session.customer_details?.email ?? session.customer_email ?? undefined;
   const stripeCustomerId =
     typeof session.customer === "string" ? session.customer : session.customer?.id;
 
@@ -74,10 +72,7 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
       _type: "customer",
       clerkUserId: userId,
     });
-    const details = Object.fromEntries(
-      Object.entries({ email, name, stripeCustomerId }).filter(([, v]) => v),
-    );
-    if (Object.keys(details).length > 0) tx.patch(customerId, (p) => p.set(details));
+    if (stripeCustomerId) tx.patch(customerId, (p) => p.set({ stripeCustomerId }));
   } else {
     console.warn(`Order ${orderId}: session has no Clerk user id, order has no customer`);
   }
@@ -104,15 +99,6 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
     }),
     total: session.amount_total ?? rows.reduce((sum, r) => sum + r.unitPrice * r.quantity, 0),
     status: "paid",
-    shippingAddress: {
-      name,
-      line1: address?.line1 ?? undefined,
-      line2: address?.line2 ?? undefined,
-      city: address?.city ?? undefined,
-      state: address?.state ?? undefined,
-      postalCode: address?.postal_code ?? undefined,
-      country: address?.country ?? undefined,
-    },
     stripeSessionId: session.id,
     createdAt: new Date(session.created * 1000).toISOString(),
   });
