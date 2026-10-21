@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  logging: {
+    // Forward only browser errors to the terminal; warnings stay in the browser console.
+    browserToTerminal: "error",
+  },
   images: {
     remotePatterns: [
       {

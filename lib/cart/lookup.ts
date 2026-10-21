@@ -7,6 +7,9 @@ import { urlFor } from "@/sanity/lib/image";
 /** Current, authoritative data for one purchasable variant. */
 export type VariantInfo = {
   sku: string;
+  /** Sanity ids, used by the webhook to decrement stock. */
+  productId: string;
+  variantKey: string;
   productSlug: string;
   productName: string;
   variantLabel: string;
@@ -29,6 +32,8 @@ export async function lookupVariants(skus: string[]) {
       const image = variant.image ?? product.image;
       found.set(variant.sku, {
         sku: variant.sku,
+        productId: product._id,
+        variantKey: variant._key,
         productSlug: product.slug,
         productName: product.name,
         variantLabel: variantLabel(variant),

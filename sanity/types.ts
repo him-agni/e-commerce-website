@@ -465,7 +465,7 @@ export type CATEGORY_SLUGS_QUERY_RESULT = Array<string>;
 
 // Source: lib/sanity/queries.ts
 // Variable: VARIANTS_BY_SKU_QUERY
-// Query: *[_type == "product" && count(variants[sku in $skus]) > 0] {  _id,  name,  "slug": slug.current,  "image": images[0],  "variants": variants[sku in $skus] { sku, color, size, design, price, stock, image }}
+// Query: *[_type == "product" && count(variants[sku in $skus]) > 0] {  _id,  name,  "slug": slug.current,  "image": images[0],  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }}
 export type VARIANTS_BY_SKU_QUERY_RESULT = Array<{
   _id: string;
   name: string;
@@ -479,6 +479,7 @@ export type VARIANTS_BY_SKU_QUERY_RESULT = Array<{
     _key: string;
   } | null;
   variants: Array<{
+    _key: string;
     sku: string;
     color: string | null;
     size: string | null;
@@ -495,6 +496,34 @@ export type VARIANTS_BY_SKU_QUERY_RESULT = Array<{
   }>;
 }>;
 
+// Source: lib/sanity/queries.ts
+// Variable: ORDERS_BY_USER_QUERY
+// Query: *[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {  _id,  orderNumber,  status,  total,  createdAt,  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },  shippingAddress}
+export type ORDERS_BY_USER_QUERY_RESULT = Array<{
+  _id: string;
+  orderNumber: string;
+  status: "cancelled" | "delivered" | "paid" | "shipped";
+  total: number | null;
+  createdAt: string | null;
+  items: Array<{
+    _key: string;
+    productName: string | null;
+    variantLabel: string | null;
+    unitPrice: number | null;
+    quantity: number | null;
+    productSlug: string | null;
+  }> | null;
+  shippingAddress: {
+    name?: string;
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  } | null;
+}>;
+
 // Query TypeMap
 declare global {
   interface SanityQueries {
@@ -506,7 +535,8 @@ declare global {
     '*[_type == "product" && slug.current == $slug][0] {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  images,\n  "category": category->{ title, "slug": slug.current },\n  designs[] { _key, name, image },\n  variants[] { _key, color, size, design, price, stock, sku, image }\n}': PRODUCT_BY_SLUG_QUERY_RESULT;
     '*[_type == "product" && defined(slug.current)].slug.current': PRODUCT_SLUGS_QUERY_RESULT;
     '*[_type == "category" && defined(slug.current)].slug.current': CATEGORY_SLUGS_QUERY_RESULT;
-    '*[_type == "product" && count(variants[sku in $skus]) > 0] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "variants": variants[sku in $skus] { sku, color, size, design, price, stock, image }\n}': VARIANTS_BY_SKU_QUERY_RESULT;
+    '*[_type == "product" && count(variants[sku in $skus]) > 0] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }\n}': VARIANTS_BY_SKU_QUERY_RESULT;
+    '*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  status,\n  total,\n  createdAt,\n  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },\n  shippingAddress\n}': ORDERS_BY_USER_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

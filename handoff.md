@@ -2,7 +2,7 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (Phase 3 verified; seed 15/18 categories)_
+_Last updated: 2026-10-21 (Phase 4 verified; seed 15/18 categories)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
@@ -14,9 +14,12 @@ _Last updated: 2026-10-21 (Phase 3 verified; seed 15/18 categories)_
 - **Phase 3 (auth, cart, checkout) built** (2026-10-21). Clerk v7 (`proxy.ts` = `clerkMiddleware`, `ClerkProvider` in `(shop)/layout.tsx` so the Studio is unaffected; header uses client `useUser`; sign-in/up pages wrap Clerk components in `<Suspense>` as Cache Components requires; v7 uses `<Show>` not `<SignedIn>`). Cart: Zustand + localStorage (`lib/cart/store.ts`, keyed by SKU), `/cart` page revalidates price/stock from Sanity via the `getCartVariants` server action (`lib/cart/lookup.ts`, uncached `freshClient`). Checkout: `POST /api/checkout` requires a Clerk session, re-checks stock, builds a Stripe Checkout session from **Sanity prices only** (`lib/checkout.ts`), US shipping address, SKU stored in product metadata for the webhook. `/checkout/success` verifies the session belongs to the signed-in user and is paid, then clears the cart. `lib/stripe.ts` refuses non-`sk_test_` keys.
 - **Verified:** build/lint/tsc pass; browser test of add-to-cart (qty, cap, header badge, cart page with live prices, signed-out CTA); 22 server checks against real Stripe test mode (input validation, out-of-stock/over-stock/unknown SKU refused, session total/currency/metadata/US-only shipping correct); hosted Stripe page shows correct items and $3,597.00 total; unauthenticated `/api/checkout` returns 401.
 - **Signed-in path verified by the owner (2026-10-21):** sign up, add to cart, Check out, pay with the 4242 test card, land on the "Order confirmed" page. (Automated sign-up is blocked by Clerk bot protection on the dev instance, so this path is only testable by hand.) Still true: stock is NOT decremented and no order is recorded yet (Phase 4 webhook).
+- **Phase 4 (orders, webhook) done and verified live** (2026-10-21). `POST /api/webhooks/stripe` verifies the signature (raw body), handles `checkout.session.completed` and `async_payment_succeeded`, and calls `recordPaidSession` (`lib/orders.ts`): one Sanity transaction that creates the order (`order-<sessionId>`, fails if it exists, so retries/concurrent deliveries never double-decrement), upserts `customer-<clerkUserId>` (email, name, stripeCustomerId), and decrements variant stock (clamped at 0; oversold lines are logged). Then `revalidateTag("products", { expire: 0 })`. Non-2xx makes Stripe retry. `/orders` lists the signed-in user's orders (uncached read filtered by Clerk user id); account menu has a "My orders" link; `/checkout/success` links to it. Checkout sessions now use `customer_creation: "always"`.
+- **Verified:** 10 route checks (missing/bad/tampered/wrong-secret signatures, unhandled events, duplicates, unpaid, unknown session) + order-recording checks against real Stripe/Sanity (totals, shipping, customer link, idempotency incl. concurrent) + live purchase through `stripe listen`: all events `[200]`, order created, stock 5 -> 4. The `/orders` page UI has only been checked by build/type/lint (needs a signed-in session).
+- **Local webhook testing:** run `stripe listen --api-key $k --forward-to localhost:3000/api/webhooks/stripe` where `$k` is read from `.env.local` in PowerShell (`$k = (Select-String -Path .env.local -Pattern '^STRIPE_SECRET_KEY=(.*)$').Matches.Groups[1].Value`). Plain `stripe listen` used a stale saved login for another Stripe account. The printed `whsec_` goes in `STRIPE_WEBHOOK_SECRET` (same value each run). Keep `npm run dev` and `stripe listen` running together. Deployed site needs its own webhook endpoint + secret (Phase 6).
 - Stack: Next.js 16.4.2 (`cacheComponents` on, so no `export const dynamic`), Tailwind v4 via `@tailwindcss/turbopack`, shadcn/ui (`base-nova`, only `button` so far).
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
-- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-3 committed and pushed 2026-10-21; later fixes pushed the same day.
+- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-4 committed and pushed 2026-10-21.
 
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
@@ -26,11 +29,12 @@ _Last updated: 2026-10-21 (Phase 3 verified; seed 15/18 categories)_
 
 ## Waiting on the user
 1. Re-run `npm run seed` after the Unsplash hourly limit resets (about an hour after the last run) to finish the last 3 categories (drawer chests, mirrors, curtains).
-2. Later: Google AI Studio key (`GOOGLE_GENERATIVE_AI_API_KEY`) before Phase 5, Stripe webhook secret before Phase 4.
+2. Later: Google AI Studio key (`GOOGLE_GENERATIVE_AI_API_KEY`) before Phase 5.
 3. Confirm or change the brand look (now visible on the live pages).
 
 ## Next up
-- Phase 4: Stripe webhook route (verify signature, read line items + SKU metadata, create customer + order in Sanity, decrement variant stock, `revalidateTag("products")`), orders page for the signed-in user. Needs `STRIPE_WEBHOOK_SECRET` from `stripe listen` (install Stripe CLI first). Webhook must be idempotent (Stripe retries; use `stripeSessionId` as the order id).
+- Phase 5: Gemini shopping assistant. `/api/chat` with the Vercel AI SDK + Google provider, tool `searchProducts` (GROQ) and `getMyOrders` scoped to the Clerk user id, chat widget UI, graceful handling of free-tier rate limits. Needs `GOOGLE_GENERATIVE_AI_API_KEY` from https://aistudio.google.com/apikey.
+- Phase 6: polish, accessibility, SEO, deploy to Vercel Hobby (set env vars, create production Stripe webhook endpoint + secret, Clerk production keys/domain).
 - After the seed finishes (re-run `npm run seed`), rebuild so the new category/product pages are prerendered.
 - Verify current free-tier limits of each service (plan Phase 0 item, not done).
 

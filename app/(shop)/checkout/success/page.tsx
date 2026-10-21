@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { ClearCart } from "@/components/cart/clear-cart";
 import { Container } from "@/components/site/container";
@@ -23,6 +24,8 @@ export default function CheckoutSuccessPage({ searchParams }: Props) {
 }
 
 async function Confirmation({ searchParams }: Props) {
+  // This page checks a payment, so it is always rendered per request, never prerendered.
+  await connection();
   const { session_id: sessionId } = await searchParams;
   const { userId } = await auth();
 
@@ -71,18 +74,27 @@ async function Confirmation({ searchParams }: Props) {
         {email ? `A receipt is on its way to ${email}.` : "A receipt is on its way."}{" "}
         This is a demo store, so nothing will ship.
       </p>
-      <ContinueShopping />
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link
+          href="/orders"
+          className={cn(buttonVariants({ size: "lg" }), "h-11 px-6 text-base")}
+        >
+          View your orders
+        </Link>
+        <ContinueShopping className="mt-0" />
+      </div>
     </>
   );
 }
 
-function ContinueShopping() {
+function ContinueShopping({ className }: { className?: string }) {
   return (
     <Link
       href="/products"
       className={cn(
         buttonVariants({ variant: "outline", size: "lg" }),
         "mt-8 h-11 px-6 text-base",
+        className,
       )}
     >
       Continue shopping

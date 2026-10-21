@@ -69,5 +69,15 @@ export const VARIANTS_BY_SKU_QUERY = defineQuery(`*[_type == "product" && count(
   name,
   "slug": slug.current,
   "image": images[0],
-  "variants": variants[sku in $skus] { sku, color, size, design, price, stock, image }
+  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }
+}`);
+
+export const ORDERS_BY_USER_QUERY = defineQuery(`*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {
+  _id,
+  orderNumber,
+  status,
+  total,
+  createdAt,
+  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },
+  shippingAddress
 }`);
