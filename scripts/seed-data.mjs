@@ -661,4 +661,77 @@ export const categories = [
       },
     ],
   },
+  {
+    slug: "accent-chairs",
+    title: "Accent Chairs",
+    description: "Statement seating for reading nooks, bedrooms and living rooms.",
+    query: "accent chair armchair living room",
+    products: [
+      {
+        name: "Hartley Wingback Chair",
+        description:
+          "A classic wingback with a high back for cozy reading, in a soft textured weave.",
+        material: "Woven fabric, solid beech frame",
+        base: 599,
+        colors: ["Oatmeal", "Sage"],
+        sizes: [["Standard", 0]],
+        designs: [],
+      },
+      {
+        name: "Marlow Barrel Accent Chair",
+        description:
+          "A rounded barrel back and a deep seat that invite you to curl up with a book.",
+        material: "Boucle, hardwood frame",
+        base: 549,
+        colors: ["Cream", "Charcoal"],
+        sizes: [["Standard", 0]],
+        designs: [],
+      },
+      {
+        name: "Juniper Rocking Chair",
+        description:
+          "A solid wood rocker with a gentle motion and a woven seat, made for porches and nurseries.",
+        material: "Solid ash",
+        base: 429,
+        colors: ["Natural Ash", "Black"],
+        sizes: [["Standard", 0]],
+        designs: [],
+      },
+    ],
+  },
+  {
+    slug: "vases",
+    title: "Vases",
+    description: "Ceramic, glass and metal vases for fresh flowers and dried stems.",
+    query: "ceramic vase flowers",
+    products: [
+      {
+        name: "Terracotta Pitcher Vase",
+        description: "A hand-thrown terracotta pitcher with a matte finish, lovely with wildflowers.",
+        material: "Terracotta",
+        base: 48,
+        colors: ["Natural Clay", "Chalk White"],
+        sizes: [["Small", 0], ["Large", 22]],
+        designs: [],
+      },
+      {
+        name: "Stoneware Bud Vase Set",
+        description: "Three small stoneware vases in graduated heights for single stems.",
+        material: "Glazed stoneware",
+        base: 54,
+        colors: ["Cream", "Sage"],
+        sizes: [["Set of 3", 0]],
+        designs: [],
+      },
+      {
+        name: "Galvanized Farmhouse Vase",
+        description: "A weathered galvanized metal vase with a vintage look that holds up outdoors too.",
+        material: "Galvanized steel",
+        base: 39,
+        colors: ["Zinc", "Black"],
+        sizes: [["Small", 0], ["Medium", 14], ["Large", 28]],
+        designs: [],
+      },
+    ],
+  },
 ];

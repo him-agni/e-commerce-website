@@ -2,12 +2,12 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (Phase 5 built; seed 15/18 categories)_
+_Last updated: 2026-10-21 (Phase 5 built; seed complete, 20 categories)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
 - **Phase 1 in progress.** Done: Sanity packages, `sanity.config.ts` (Studio at `/studio`, loads, returns 200), schemas in `sanity/schemaTypes/` (category, product, variant object, customer, order), client helpers in `sanity/lib/` (`client` read, `writeClient` server-only, `urlFor`), TypeGen (`npm run typegen` writes `sanity/types.ts`; config lives in `sanity.cli.ts`). Sanity keys verified working (`node --env-file=.env.local scripts/check-sanity.mjs`). Dataset is empty of content.
-- **Seed script** (`npm run seed`, `scripts/seed.mjs` + `scripts/seed-data.mjs`): 18 categories x 3 products (added coffee tables, side tables, night stands, drawer chests, mirrors, curtains on 2026-10-21), variants = colors x sizes x designs, price in cents, deterministic stock (some 0), 2 Unsplash photos per product with credit stored on the asset. Idempotent (`createIfNotExists`, photo cache in `scripts/.seed-cache.json`, gitignored). **Partly run (2026-10-21): 15 of 18 categories seeded** (first 12 complete; coffee tables, side tables, night stands done). Unsplash demo limit (50 requests/hour) stopped it. **Remaining: drawer chests, mirrors, curtains.** To change already-seeded docs, edit in the Studio or delete them first (the script never overwrites).
+- **Seed script** (`npm run seed`, `scripts/seed.mjs` + `scripts/seed-data.mjs`): 20 categories x 3 products (added coffee tables, side tables, night stands, drawer chests, mirrors, curtains, accent chairs, vases on 2026-10-21), variants = colors x sizes x designs, price in cents, deterministic stock (some 0), 2 Unsplash photos per product with credit stored on the asset. Idempotent (`createIfNotExists`, photo cache in `scripts/.seed-cache.json`, gitignored). **Fully run (2026-10-21): all 20 categories seeded** (60 products, 208 variants, every product has photos). To change already-seeded docs, edit in the Studio or delete them first (the script never overwrites).
 - Unsplash key is `UNSPLASH_ACCESS_KEY` (set). Pexels was tried first but paused new API keys.
 - **Phase 2 (storefront) done and verified** (2026-10-21): `(shop)` route group with header (category strip) + footer; home (hero, featured, category tiles), `/products`, `/categories/[slug]`, `/products/[slug]`, 404 page. Product page selectors (`components/product/product-details.tsx`) switch color/size/design to the matching variant and update price, stock message, SKU and photo; out-of-stock options are struck through. Tested in a headless browser (desktop + 390px phone, no console errors, no horizontal overflow). Variant/design-specific photos are supported in code but untested because no seeded variant has its own image.
 - Data layer: `lib/sanity/queries.ts` (GROQ via `defineQuery`, types from `npm run typegen`, **re-run typegen after changing a query**) and `lib/sanity/data.ts` (`'use cache'` fetchers: products tagged `products` / `product:<slug>`, `cacheLife("minutes")`; categories `hours`). Phase 4 webhook should call `revalidateTag("products")` after decrementing stock. Pages are prerendered via `generateStaticParams`, so **new products/categories need a rebuild or a cache revalidation to show up** until Phase 4 wiring.
@@ -21,10 +21,9 @@ _Last updated: 2026-10-21 (Phase 5 built; seed 15/18 categories)_
 - Tools (`lib/ai/tools.ts`): `searchProducts` (ranking in code, `lib/ai/search.ts`: plurals, synonyms, head-noun weighting, price/category filters; whole catalog fetched via cached `getAssistantCatalog`, fine for dozens of products, revisit if the catalog grows large), `getProductDetails`, `listCategories`, `getMyOrders` (userId comes from the server's Clerk session, never from the model/browser; no shipping address returned). System prompt in `lib/ai/system-prompt.ts` (store-only, no invented policies, ignores injected instructions).
 - Safeguards: rate limit 8/min and 60/hr per user/IP (in memory per instance, `lib/ai/rate-limit.ts`), body size and 500-char message caps, history validated with `validateUIMessages`, browser `system` messages dropped, generic errors to the browser (details only in server log). Widget renders markdown through React elements (only same-site `/links`, no raw HTML).
 - **Verified:** search ranking (14+11 cases on the real catalog), live Gemini conversations through the API (search, details, off-topic refusal, prompt-extraction refusal, signed-out order question), validation + rate-limit responses, order tool for owner / signed-out / other user, browser UI on desktop and 390px (open, suggestions, cards, navigation keeps widget open, Escape + focus return, no console errors), renderer safety cases. Signed-in "where is my order" verified by the owner in the real widget (both orders listed correctly). Renderer supports paragraphs, bullets, numbered lists, bold, same-site links.
-- Seed pending still affects the assistant: it cannot find mirrors, curtains or drawer chests until `npm run seed` finishes.
 - Stack: Next.js 16.4.2 (`cacheComponents` on, so no `export const dynamic`), Tailwind v4 via `@tailwindcss/turbopack`, shadcn/ui (`base-nova`, only `button` so far).
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
-- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-5 committed and pushed 2026-10-21.
+- Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-5 plus the full 20-category catalog committed and pushed 2026-10-21.
 
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
@@ -33,14 +32,13 @@ _Last updated: 2026-10-21 (Phase 5 built; seed 15/18 categories)_
 - Removed unused create-next-app SVGs from `public/`.
 
 ## Waiting on the user
-1. Re-run `npm run seed` after the Unsplash hourly limit resets (about an hour after the last run) to finish the last 3 categories (drawer chests, mirrors, curtains).
 2. (done) Google AI Studio key is set.
 3. Confirm or change the brand look (now visible on the live pages).
 
 ## Next up
 - Phase 6: polish (loading/empty/error states, responsive pass, SEO metadata, image optimization, accessibility check), deploy to Vercel Hobby (env vars, production Stripe webhook endpoint + secret, Clerk production keys/domain, Sanity CORS origin for the deployed URL), README with setup steps.
 - Optional: header "Categories" dropdown (18 links now crowd the strip), in-site admin view (not planned; Studio is the admin).
-- After the seed finishes (re-run `npm run seed`), rebuild so the new category/product pages are prerendered.
+- Rebuild before deploying so all 20 categories / 60 products are prerendered. Skim the Unsplash photos in the Studio and swap mismatches.
 - Verify current free-tier limits of each service (plan Phase 0 item, not done).
 
 ## Gotchas

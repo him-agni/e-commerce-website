@@ -24,7 +24,7 @@ Next.js (App Router, TypeScript), Tailwind + shadcn/ui, Sanity (+ embedded Studi
 - **variant** (object inside product): color, size, design (optional), price (USD cents), stock, sku.
 - **customer**: clerkUserId, email, name, stripeCustomerId.
 - **order**: orderNumber, items (snapshot of name, variant, price at purchase), total, status (paid, shipped, delivered, cancelled), customer (ref), shipping address, stripeSessionId.
-Catalog categories: beds, dining tables, couches, sofa sets, chandeliers, chairs, cushions, rugs, TV tables, console tables, lamps, candles, coffee tables, side tables, night stands, drawer chests, mirrors, curtains.
+Catalog categories: beds, dining tables, couches, sofa sets, chandeliers, chairs, cushions, rugs, TV tables, console tables, lamps, candles, coffee tables, side tables, night stands, drawer chests, mirrors, curtains, accent chairs, vases.
 
 ## Phases
 

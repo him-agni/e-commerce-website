@@ -56,6 +56,8 @@ const SYNONYMS: Record<string, string[]> = {
   light: ["lamp", "chandelier"],
   lighting: ["lamp", "chandelier"],
   bulb: ["lamp"],
+  armchair: ["chair", "accent"],
+  rocker: ["chair", "rocking"],
   stool: ["chair"],
   seat: ["chair"],
   wooden: ["wood", "oak", "pine"],
