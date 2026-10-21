@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/format";
+import { useCart } from "@/lib/cart/store";
+import { formatPrice, variantLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { urlFor } from "@/sanity/lib/image";
 import type { PRODUCT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
@@ -69,6 +71,27 @@ export function ProductDetails({ product }: { product: Product }) {
   const variant = variants.find((v) => matches(v, selection)) ?? variants[0];
   const activeImage = gallery.find((g) => g.key === activeKey) ?? gallery[0];
   const stock = stockMessage(variant.stock);
+
+  const addItem = useCart((state) => state.addItem);
+  const inCart = useCart(
+    (state) => state.items.find((i) => i.sku === variant.sku)?.quantity ?? 0,
+  );
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const atMax = inCart >= variant.stock;
+
+  function addToCart() {
+    const cover = gallery[0];
+    const added = addItem({
+      sku: variant.sku,
+      productSlug: product.slug,
+      name: product.name,
+      variantLabel: variantLabel(variant),
+      imageUrl: cover ? urlFor(cover.image).width(300).url() : null,
+      unitPrice: variant.price,
+      stock: variant.stock,
+    });
+    if (added > 0) setJustAdded(variant.sku);
+  }
 
   function imageKeyFor(next: Variant) {
     const design = product.designs?.find((d) => d.name === next.design);
@@ -195,14 +218,31 @@ export function ProductDetails({ product }: { product: Product }) {
         })}
 
         <div>
-          <Button size="lg" className="h-11 w-full text-base" disabled>
-            {variant.stock === 0 ? "Out of stock" : "Add to cart"}
+          <Button
+            size="lg"
+            className="h-11 w-full text-base"
+            disabled={variant.stock === 0 || atMax}
+            onClick={addToCart}
+          >
+            {variant.stock === 0
+              ? "Out of stock"
+              : atMax
+                ? "All available units are in your cart"
+                : "Add to cart"}
           </Button>
-          {variant.stock > 0 && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Cart and checkout are coming in the next build phase.
-            </p>
-          )}
+          <p className="mt-2 min-h-5 text-sm" aria-live="polite">
+            {inCart > 0 && (
+              <>
+                <span className="text-muted-foreground">
+                  {justAdded === variant.sku ? "Added to your cart. " : ""}
+                  {inCart} in cart.{" "}
+                </span>
+                <Link href="/cart" className="underline underline-offset-4">
+                  View cart
+                </Link>
+              </>
+            )}
+          </p>
         </div>
 
         <div className="space-y-4 border-t pt-6 text-sm leading-relaxed">

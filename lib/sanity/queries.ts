@@ -63,3 +63,11 @@ export const PRODUCT_BY_SLUG_QUERY = defineQuery(`*[_type == "product" && slug.c
 export const PRODUCT_SLUGS_QUERY = defineQuery(`*[_type == "product" && defined(slug.current)].slug.current`);
 
 export const CATEGORY_SLUGS_QUERY = defineQuery(`*[_type == "category" && defined(slug.current)].slug.current`);
+
+export const VARIANTS_BY_SKU_QUERY = defineQuery(`*[_type == "product" && count(variants[sku in $skus]) > 0] {
+  _id,
+  name,
+  "slug": slug.current,
+  "image": images[0],
+  "variants": variants[sku in $skus] { sku, color, size, design, price, stock, image }
+}`);

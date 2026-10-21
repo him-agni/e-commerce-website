@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getCategories } from "@/lib/sanity/data";
+import { AuthControls } from "./auth-controls";
+import { CartLink } from "./cart-link";
 import { Container } from "./container";
 
 export async function Header() {
@@ -11,13 +13,15 @@ export async function Header() {
         <Link href="/" className="font-heading text-2xl tracking-tight">
           My Farmhouse
         </Link>
-        <nav aria-label="Main" className="flex items-center gap-6 text-sm">
+        <nav aria-label="Main" className="flex items-center gap-5 text-sm">
           <Link
             href="/products"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
             Shop all
           </Link>
+          <AuthControls />
+          <CartLink />
         </nav>
       </Container>
       <nav aria-label="Categories" className="border-t">
