@@ -15,6 +15,11 @@ export function Footer() {
               Shop all
             </Link>
           </li>
+          <li>
+            <Link href="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+          </li>
         </ul>
       </Container>
       <Container className="pb-8 text-xs text-muted-foreground">

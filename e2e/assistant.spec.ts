@@ -16,6 +16,19 @@ test.describe("shopping assistant", () => {
     await expect(page.getByRole("button", { name: "Ask us: open shopping assistant" })).toBeFocused();
   });
 
+  test("tells people their messages go to Google and links to the privacy page", async ({ page, context }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Ask us: open shopping assistant" }).click();
+
+    const panel = page.getByRole("dialog", { name: "Shopping assistant" });
+    await expect(panel).toContainText("Google");
+    await expect(panel).toContainText("do not share personal or payment details");
+
+    const [popup] = await Promise.all([context.waitForEvent("page"), panel.getByRole("link", { name: "Privacy" }).click()]);
+    await expect(popup).toHaveURL(/\/privacy$/);
+    await expect(popup.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+  });
+
   test("offers a send button that is off until there is something to send", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Ask us: open shopping assistant" }).click();

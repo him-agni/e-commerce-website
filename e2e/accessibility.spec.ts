@@ -10,6 +10,7 @@ const pages = [
   ["a product", "/products/barn-linen-accent-chair"],
   ["the cart", "/cart"],
   ["the wishlist", "/wishlist"],
+  ["the privacy page", "/privacy"],
 ] as const;
 
 for (const [name, path] of pages) {

@@ -87,6 +87,24 @@ test.describe("categories and hashtags", () => {
   });
 });
 
+test.describe("privacy page", () => {
+  test("is linked from the footer and explains where data lives", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+    for (const heading of ["What the site keeps, and where", "The shopping assistant", "Your choices"]) {
+      await expect(page.getByRole("heading", { level: 2, name: heading })).toBeVisible();
+    }
+    await expect(page.getByText("free tier")).toBeVisible();
+  });
+
+  test("is listed in the sitemap", async ({ request }) => {
+    expect(await (await request.get("/sitemap.xml")).text()).toContain("/privacy</loc>");
+  });
+});
+
 test.describe("private pages", () => {
   test("a signed-out visitor is sent to sign in before seeing orders", async ({ page }) => {
     await page.goto("/orders");

@@ -250,8 +250,17 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
             <Send />
           </Button>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          AI replies can be wrong. Please do not share personal or payment details.
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+          Replies come from Google&rsquo;s Gemini on its free tier, which Google may review and use to
+          improve its products. AI can be wrong. Please do not share personal or payment details.{" "}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Privacy
+          </a>
         </p>
       </form>
     </section>
