@@ -108,12 +108,12 @@ There are two layers. Neither one pays or writes to Sanity, so both are safe to 
 **Signed-in flow.** One spec signs in as a dedicated Clerk test user, adds a product, presses Check out, and confirms Stripe opens in test mode with the right product, price and email. It stops there and never pays, so no order is created and no stock changes; the only trace is an unpaid Stripe test session. It skips itself unless these are set (in `.env.local`, or as CI secrets):
 
 ```bash
-E2E_USER_EMAIL=e2e+clerk_test@example.com   # a user created in your Clerk development instance
+E2E_USER_EMAIL=e2e-tester@example.com       # a user created in your Clerk development instance
 CLERK_SECRET_KEY=sk_test_...                # already in .env.local
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
-Create the user in the Clerk dashboard (Users, Create user) with an email containing `+clerk_test`. The test signs in with a one-time token from Clerk's API, so it needs no password.
+Create the user in the Clerk dashboard (Users, Create user) with an ordinary address that nobody can receive mail at, such as `e2e-tester@example.com`. **Do not use a `+clerk_test` address:** Clerk development instances accept the fixed code `424242` for those, so anyone who knew the address could sign in as that user. The test signs in with a one-time token from Clerk's API, so it needs no password and no email code.
 
 ```bash
 npm run dev                                              # in one terminal
