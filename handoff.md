@@ -2,7 +2,7 @@
 
 Living status file. Update it at the end of every working session so the next session (or person) can pick up cold. Full plan: [docs/plan.md](docs/plan.md).
 
-_Last updated: 2026-10-21 (deployed to Vercel)_
+_Last updated: 2026-10-22 (automated tests added)_
 
 ## Current state
 - **Phase 0 done** except the Gemini key and Stripe webhook secret (deliberately postponed; needed in Phases 4-5).
@@ -43,6 +43,8 @@ _Last updated: 2026-10-21 (deployed to Vercel)_
 - Brand in `app/globals.css`: warm white, charcoal primary, linen secondary, wood accent (`text-wood`), Playfair Display headings. Palette is a proposal; user has not confirmed it.
 - Git: `main`, remote `origin` = https://github.com/him-agni/e-commerce-website.git. Phases 0-6 pushed 2026-10-21; deployment config (`vercel.json`, `.gitignore`, this file) uncommitted when written.
 
+- **Automated tests (2026-10-22), uncommitted until the owner asks to push.** `npm test` = 173 Vitest tests in `tests/` (checkout, orders, both webhooks, checkout/chat/revalidate routes, assistant tools, search ranking, rate limit, cart and wishlist stores, message renderer, catalog data and legacy redirects). Config: `vitest.config.mts` (aliases `@/` and stubs `server-only`; env defaults in `tests/helpers/setup.ts`). `npm run test:e2e` = 47 Playwright specs in `e2e/` run as two projects (`desktop` and `mobile` = Pixel 7), 94 test runs: storefront, shopping flows, assistant open/close, API refusals, axe a11y on six pages, `responsive.spec.ts` (no sideways scroll, menu and assistant fit, tap targets), and `signed-in.spec.ts` (signs in as the Clerk test user, adds to cart, Check out lands on Stripe with the right product, price and email, never pays). `E2E_BASE_URL` points it at any deployment, otherwise it reuses or starts `npm run dev`. Last full run on the live site: 92 passed, 2 skipped (the phone-only checks, on the desktop project). The config loads `.env.local`. **Clerk test user:** `e2e+clerk_test@example.com` (id `user_3L24pIRreZNpEy0MqaFdAFCNpjU`) was created in the Clerk dev instance on 2026-10-22; `E2E_USER_EMAIL` is in `.env.local`. Sign-in uses a one-time token (`clerk.signIn({ emailAddress })`) because password sign-in hits Clerk's `needs_client_trust` email-code step. Signed-in tests skip without `E2E_USER_EMAIL` + Clerk keys. Each run leaves an unpaid Stripe test session; harmless. Nine safeguards were deliberately broken and each was caught. CI: `.github/workflows/ci.yml` (lint, `npm run typecheck`, tests with coverage) and `e2e.yml` (manual and daily against the live site); neither has run on GitHub yet, but the same steps passed in a clean copy of the tracked files. `typecheck` runs `next typegen` first because `LayoutProps` is a Next-generated type that a fresh checkout lacks. `@types/node` was raised to 24 because Vitest 5 requires 22 or newer. Coverage is about 80% of `lib/`, `app/api/` and the renderer; untested on purpose: `lib/sanity/data.ts` (cache wrappers), `lib/ai/model.ts` (Gemini wiring), `lib/stripe.ts` guards.
+
 ## Done
 - Scaffold, agent-skill setup (`CLAUDE.md`, `AGENTS.md`, `docs/agents/`), recovered plan into `docs/plan.md` (old chat lived in a OneDrive-keyed Claude session folder).
 - shadcn init, fixed its self-referencing `--font-sans` var, brand tokens, serif heading font, SEO title template.
@@ -55,6 +57,8 @@ _Last updated: 2026-10-21 (deployed to Vercel)_
 3. Skim the Unsplash photos in the Studio and swap mismatches (edits go live in seconds via the Sanity webhook).
 
 ## Next up
+- To run the signed-in flow in GitHub Actions, add repository secrets `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `E2E_USER_EMAIL` (optional; they skip otherwise).
+- After the first push, check the Actions tab: `CI` should pass; run `End-to-end` once by hand. Add a CI badge to the README once it has a green run.
 - Optional: Clerk production instance (needs an owned domain); custom domain on Vercel; in-site admin view.
 - Re-run Lighthouse after any big change; the main cost is Clerk's scripts.
 - Revisit the assistant's model ids if Gemini availability changes (see Gotchas).
@@ -71,5 +75,6 @@ _Last updated: 2026-10-21 (deployed to Vercel)_
 - `.next/` can hold stale generated types after moving/deleting routes; if `tsc`/build complains about `.next/**/validator.ts`, delete `.next`.
 - Env helpers/scripts: `node --env-file=.env.local scripts/<file>.mjs`. Bash heredocs with apostrophes inside large multi-file commands broke once; use the Write tool for multi-file creation.
 - Package manager is **npm** (pnpm is not installed).
+- Tests: Next keeps the previous page hidden in the DOM after a client-side navigation, so e2e counts must use `:visible`. Playwright reuses whatever is on port 3000, including a dev server you started. `@clerk/testing` is a dev dependency used only by `e2e/global.setup.ts` and `signed-in.spec.ts`. `tests/**` mock `server-only` through the alias, so importing a server module in a test is fine.
 - Stripe stays in test mode.
 - Issues are tracked as markdown under `.scratch/` (not created yet); domain docs `GLOSSARY.md` and `docs/adr/` not created yet.

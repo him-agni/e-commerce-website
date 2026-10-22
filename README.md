@@ -78,11 +78,49 @@ It prints a `whsec_…` signing secret; put it in `.env.local` as `STRIPE_WEBHOO
 | `npm run dev` | development server |
 | `npm run build` / `npm start` | production build and server |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | generates Next's route types, then runs the TypeScript compiler |
+| `npm test` | unit and integration tests (Vitest); `npm run test:watch` re-runs on save, `npm run test:coverage` adds a coverage report |
+| `npm run test:e2e` | browser tests (Playwright) against a running site; see Testing |
 | `npm run typegen` | regenerates TypeScript types from the Sanity schemas and GROQ queries (run after changing either) |
 | `npm run seed` | creates categories, products and photos in Sanity; safe to re-run |
 | `npm run check-env` | validates `.env.local` without printing secrets |
 
 The seed script uses Unsplash's free API, which allows 50 requests an hour. Its data (`scripts/seed-data.mjs`) is organized as category, then hashtag groups, then products. If it stops with a rate-limit message, wait an hour and run it again; finished work is kept.
+
+## Testing
+
+There are two layers. Neither one pays or writes to Sanity, so both are safe to run any time, including against the live site.
+
+**Unit and integration tests (`tests/`, Vitest, about 5 seconds).** They cover the logic where a mistake would cost money or leak data, with Sanity, Stripe and Clerk replaced by fakes:
+
+- *Checkout:* cart input is validated; the price charged always comes from Sanity, never the browser; stock is re-checked; every problem is reported at once.
+- *Orders:* the order id comes from the Stripe session, so a repeated or simultaneous webhook cannot double-count; stock never goes below zero and oversold units are flagged; **no name, email or address ever reaches the public dataset**.
+- *Webhooks:* Stripe's signature is verified with the real library (missing, wrong-secret and tampered bodies are all refused), and the Sanity refresh hook refuses unsigned calls.
+- *Assistant:* the rate limiter, the tool results, the product search ranking, the chat route's validation (browser-supplied system messages are dropped; the user id comes from the session), and the reply renderer (no raw HTML, no external links).
+- *Cart and wishlist:* stock and per-line caps, persistence, and the 50-item wishlist limit.
+- *Catalog data:* nine categories, 60 products, unique slugs, valid hashtags, and every old category address redirecting to a hashtag page that exists.
+
+**Browser tests (`e2e/`, Playwright, about two minutes for everything).** A real Chromium walks the storefront twice, once at desktop size and once as a Pixel 7 phone: the Shop menu, hashtag filters, old-address redirects, 404s, choosing a size, the quantity stepper, cart, wishlist, share, the assistant opening and closing, the sitemap and structured data, API routes refusing anonymous callers, no sideways scrolling, tap-sized buttons, and an automated accessibility scan (axe, WCAG 2.1 A/AA) of six pages.
+
+**Signed-in flow.** One spec signs in as a dedicated Clerk test user, adds a product, presses Check out, and confirms Stripe opens in test mode with the right product, price and email. It stops there and never pays, so no order is created and no stock changes; the only trace is an unpaid Stripe test session. It skips itself unless these are set (in `.env.local`, or as CI secrets):
+
+```bash
+E2E_USER_EMAIL=e2e+clerk_test@example.com   # a user created in your Clerk development instance
+CLERK_SECRET_KEY=sk_test_...                # already in .env.local
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+```
+
+Create the user in the Clerk dashboard (Users, Create user) with an email containing `+clerk_test`. The test signs in with a one-time token from Clerk's API, so it needs no password.
+
+```bash
+npm run dev                                              # in one terminal
+npm run test:e2e                                         # in another (or let it start the server itself)
+E2E_BASE_URL=https://my-farmhouse-pi.vercel.app npm run test:e2e   # against the live site
+```
+
+On GitHub, `.github/workflows/ci.yml` runs lint, types and the unit tests on every push and pull request. `.github/workflows/e2e.yml` runs the browser tests against the live site on demand and once a day (add the three secrets named in that file to include the signed-in flow).
+
+To check that the tests can actually fail, nine safeguards were broken on purpose (removing the stock check, the duplicate-order check, signature verification, the cart cap, and so on) to confirm the tests fail when they should. Automated accessibility checks find only some problems, so keyboard and screen-reader use still deserve a manual pass.
 
 ## How it fits together
 
@@ -99,6 +137,8 @@ app/studio/…        embedded Sanity Studio
 components/…        UI (site, product, cart, assistant, shadcn/ui)
 lib/…               catalog queries, cart, checkout, orders, assistant (tools, search, model)
 sanity/…            schemas, client, generated types
+tests/…             unit and integration tests (Vitest)
+e2e/…               browser tests (Playwright)
 scripts/…           seed, env check
 docs/…              plan, deployment guide
 ```
