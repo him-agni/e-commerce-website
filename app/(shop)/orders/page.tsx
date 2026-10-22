@@ -7,6 +7,7 @@ import { Container } from "@/components/site/container";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { getShipTo } from "@/lib/order-shipping";
+import { pseudonyms } from "@/lib/privacy";
 import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries";
 import { cn } from "@/lib/utils";
 import { freshClient } from "@/sanity/lib/client";
@@ -41,13 +42,14 @@ async function OrderList() {
   if (!userId) redirect("/sign-in?redirect_url=/orders");
 
   // Orders must be exact and private to this user, so this read is never cached.
-  const orders = await freshClient.fetch(ORDERS_BY_USER_QUERY, { userId });
+  const ids = pseudonyms();
+  const orders = await freshClient.fetch(ORDERS_BY_USER_QUERY, { userKey: ids.userKey(userId) });
 
   // Addresses are not stored in Sanity (it is publicly readable); fetch them from Stripe for the
   // most recent orders, checking each belongs to this user.
   const shipTo = await Promise.all(
     orders.map((order, index) =>
-      index < 10 ? getShipTo(order.stripeSessionId, userId) : Promise.resolve(null),
+      index < 10 ? getShipTo(ids.openSessionId(order.sessionRef), userId) : Promise.resolve(null),
     ),
   );
 

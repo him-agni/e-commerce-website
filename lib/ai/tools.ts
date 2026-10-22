@@ -8,6 +8,7 @@ import {
   getCategoryTags,
   getProduct,
 } from "@/lib/sanity/data";
+import { pseudonyms } from "@/lib/privacy";
 import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries";
 import { freshClient } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
@@ -152,7 +153,9 @@ export function createAssistantTools({ userId }: { userId: string | null }) {
             message: "The customer is not signed in. Ask them to sign in, then ask again.",
           };
         }
-        const orders = await freshClient.fetch(ORDERS_BY_USER_QUERY, { userId });
+        const orders = await freshClient.fetch(ORDERS_BY_USER_QUERY, {
+          userKey: pseudonyms().userKey(userId),
+        });
         return {
           signedIn: true as const,
           orders: orders.slice(0, 5).map((o) => ({

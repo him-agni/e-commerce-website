@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { recordPaidSession } from "@/lib/orders";
+import { createPseudonyms } from "@/lib/privacy-core.mjs";
 import { variant, variantMap } from "../helpers/variants";
 
 const { retrieve, listLineItems, lookupVariants, fetchCount, transaction } = vi.hoisted(() => ({
@@ -62,6 +63,12 @@ const lineItem = (sku: string | undefined, quantity: number, unit = 109900) => (
   },
 });
 
+// The same derivation the app uses, so tests can state what should be stored.
+const ids = createPseudonyms(process.env.ORDER_ID_SECRET);
+const SESSION = "cs_test_abcdef12345678";
+const ORDER_ID = ids.orderId(SESSION);
+const CUSTOMER_ID = `customer-${ids.userKey("user_123")}`;
+
 const opsOf = (tx: ReturnType<typeof fakeTransaction>, op: string) => tx.ops.filter((o) => o.op === op);
 
 describe("recordPaidSession", () => {
@@ -86,30 +93,26 @@ describe("recordPaidSession", () => {
 
   it("does nothing when the order already exists", async () => {
     fetchCount.mockResolvedValue(1);
-    expect(await recordPaidSession("cs_test_abcdef12345678")).toEqual({
-      status: "duplicate",
-      orderId: "order-cs_test_abcdef12345678",
-    });
+    expect(await recordPaidSession(SESSION)).toEqual({ status: "duplicate", orderId: ORDER_ID });
     expect(transaction).not.toHaveBeenCalled();
     expect(listLineItems).not.toHaveBeenCalled();
   });
 
   it("creates the order with an id derived from the Stripe session", async () => {
-    const result = await recordPaidSession("cs_test_abcdef12345678");
+    const result = await recordPaidSession(SESSION);
 
-    expect(result).toEqual({ status: "created", orderId: "order-cs_test_abcdef12345678", oversold: [] });
-    expect(fetchCount).toHaveBeenCalledWith("count(*[_id == $id])", { id: "order-cs_test_abcdef12345678" });
+    expect(result).toEqual({ status: "created", orderId: ORDER_ID, oversold: [] });
+    expect(fetchCount).toHaveBeenCalledWith("count(*[_id == $id])", { id: ORDER_ID });
 
     const [{ args }] = opsOf(tx, "create");
     expect(args[0]).toMatchObject({
-      _id: "order-cs_test_abcdef12345678",
+      _id: ORDER_ID,
       _type: "order",
-      orderNumber: "MF-12345678",
+      orderNumber: ids.orderNumber(SESSION),
       status: "paid",
       total: 219800,
-      stripeSessionId: "cs_test_abcdef12345678",
       createdAt: "2025-10-09T08:53:20.000Z",
-      customer: { _type: "reference", _ref: "customer-user_123" },
+      customer: { _type: "reference", _ref: CUSTOMER_ID },
       items: [
         {
           productName: "Aspen Slatted Bed",
@@ -124,23 +127,40 @@ describe("recordPaidSession", () => {
     expect(tx.commit).toHaveBeenCalledTimes(1);
   });
 
-  it("creates the customer only if new, holding just ids", async () => {
-    await recordPaidSession("cs_test_abcdef12345678");
+  it("creates the customer only if new, holding just a random-looking key", async () => {
+    await recordPaidSession(SESSION);
 
     expect(opsOf(tx, "createIfNotExists")[0].args[0]).toEqual({
-      _id: "customer-user_123",
+      _id: CUSTOMER_ID,
       _type: "customer",
-      clerkUserId: "user_123",
+      userKey: ids.userKey("user_123"),
     });
-    expect(opsOf(tx, "patch")[0].args).toEqual(["customer-user_123", { set: { stripeCustomerId: "cus_ABC" } }]);
+    expect(opsOf(tx, "createIfNotExists")[0].args[0]).not.toHaveProperty("stripeCustomerId");
+    expect(opsOf(tx, "patch").some((o) => o.args[0] === CUSTOMER_ID)).toBe(false);
   });
 
   it("never writes the buyer's name, email or address to the public dataset", async () => {
-    await recordPaidSession("cs_test_abcdef12345678");
+    await recordPaidSession(SESSION);
     const written = JSON.stringify(tx.ops);
     for (const secret of ["Pat Buyer", "pat@example.com", "1 Main St", "Austin"]) {
       expect(written).not.toContain(secret);
     }
+  });
+
+  it("never writes the Clerk user id, Stripe session id or Stripe customer id either", async () => {
+    await recordPaidSession(SESSION);
+    const written = JSON.stringify(tx.ops);
+    for (const identifier of ["user_123", SESSION, "cs_test_", "cus_ABC", "abcdef12345678"]) {
+      expect(written, identifier).not.toContain(identifier);
+    }
+  });
+
+  it("keeps the session id recoverable by the server, for the shipping lookup", async () => {
+    await recordPaidSession(SESSION);
+    const [{ args }] = opsOf(tx, "create");
+    const sealed = (args[0] as { sessionRef: string }).sessionRef;
+    expect(sealed).not.toContain(SESSION);
+    expect(ids.openSessionId(sealed)).toBe(SESSION);
   });
 
   it("takes stock off the variant that was sold", async () => {
@@ -207,14 +227,15 @@ describe("recordPaidSession", () => {
     expect(args[0]).not.toHaveProperty("customer");
   });
 
-  it("falls back to the metadata user id and an expanded customer object", async () => {
+  it("falls back to the user id in the session metadata", async () => {
     retrieve.mockResolvedValue(
       paidSession({ client_reference_id: null, customer: { id: "cus_OBJ" }, metadata: { clerkUserId: "user_meta" } }),
     );
     await recordPaidSession("cs_test_abcdef12345678");
 
-    expect(opsOf(tx, "createIfNotExists")[0].args[0]).toMatchObject({ _id: "customer-user_meta" });
-    expect(opsOf(tx, "patch")[0].args[1]).toEqual({ set: { stripeCustomerId: "cus_OBJ" } });
+    expect(opsOf(tx, "createIfNotExists")[0].args[0]).toMatchObject({
+      _id: `customer-${ids.userKey("user_meta")}`,
+    });
   });
 
   it("treats a concurrent duplicate delivery (409) as a duplicate, not an error", async () => {
@@ -223,10 +244,7 @@ describe("recordPaidSession", () => {
     });
     transaction.mockReturnValue(tx);
 
-    expect(await recordPaidSession("cs_test_abcdef12345678")).toEqual({
-      status: "duplicate",
-      orderId: "order-cs_test_abcdef12345678",
-    });
+    expect(await recordPaidSession(SESSION)).toEqual({ status: "duplicate", orderId: ORDER_ID });
   });
 
   it("lets other write failures through so Stripe retries the webhook", async () => {

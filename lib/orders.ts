@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { lookupVariants } from "@/lib/cart/lookup";
+import { pseudonyms } from "@/lib/privacy";
 import { stripe } from "@/lib/stripe";
 import { writeClient } from "@/sanity/lib/client";
 
@@ -15,7 +16,11 @@ const isConflict = (error: unknown) => (error as SanityError)?.statusCode === 40
 
 /**
  * Records a paid Checkout Session in Sanity: creates the customer (if new) and the order,
- * and decrements stock for each variant, all in one transaction. Stores no personal details.
+ * and decrements stock for each variant, all in one transaction.
+ *
+ * The dataset is publicly readable, so nothing that points at a person goes in it: no name,
+ * email or address, and not even the Clerk user id or Stripe session id. Those are replaced by
+ * values only the server can make or read (see lib/privacy-core.mjs).
  *
  * Safe to call repeatedly for the same session. The order id is derived from the session id
  * and created with `create` (which fails if it exists), so a retry or a concurrent duplicate
@@ -25,7 +30,8 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
   const session = await stripe.checkout.sessions.retrieve(sessionId);
   if (session.payment_status !== "paid") return { status: "unpaid" };
 
-  const orderId = `order-${session.id}`;
+  const ids = pseudonyms();
+  const orderId = ids.orderId(session.id);
   const existing = await writeClient.fetch<number>(
     "count(*[_id == $id])",
     { id: orderId },
@@ -57,22 +63,15 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
 
   const variants = await lookupVariants(rows.map((row) => row.sku));
 
-  // The Sanity dataset is publicly readable, so only identifiers go in it. The buyer's name,
-  // email and shipping address stay in Stripe and are looked up there when needed.
+  // The buyer's name, email and shipping address stay in Stripe and are looked up there when needed.
   const userId = session.client_reference_id ?? session.metadata?.clerkUserId ?? null;
-  const stripeCustomerId =
-    typeof session.customer === "string" ? session.customer : session.customer?.id;
 
   const tx = writeClient.transaction();
 
-  const customerId = userId ? `customer-${userId}` : null;
-  if (userId && customerId) {
-    tx.createIfNotExists({
-      _id: customerId,
-      _type: "customer",
-      clerkUserId: userId,
-    });
-    if (stripeCustomerId) tx.patch(customerId, (p) => p.set({ stripeCustomerId }));
+  const userKey = userId ? ids.userKey(userId) : null;
+  const customerId = userKey ? `customer-${userKey}` : null;
+  if (userKey && customerId) {
+    tx.createIfNotExists({ _id: customerId, _type: "customer", userKey });
   } else {
     console.warn(`Order ${orderId}: session has no Clerk user id, order has no customer`);
   }
@@ -80,7 +79,7 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
   tx.create({
     _id: orderId,
     _type: "order",
-    orderNumber: `MF-${session.id.slice(-8).toUpperCase()}`,
+    orderNumber: ids.orderNumber(session.id),
     ...(customerId && { customer: { _type: "reference", _ref: customerId } }),
     items: rows.map((row, index) => {
       const variant = variants.get(row.sku);
@@ -99,7 +98,8 @@ export async function recordPaidSession(sessionId: string): Promise<RecordResult
     }),
     total: session.amount_total ?? rows.reduce((sum, r) => sum + r.unitPrice * r.quantity, 0),
     status: "paid",
-    stripeSessionId: session.id,
+    // Encrypted: only the server can read it back, to ask Stripe for the shipping address.
+    sessionRef: ids.sealSessionId(session.id),
     createdAt: new Date(session.created * 1000).toISOString(),
   });
 

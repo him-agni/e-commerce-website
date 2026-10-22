@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAssistantTools } from "@/lib/ai/tools";
 import type { CatalogProduct } from "@/lib/ai/search";
+import { createPseudonyms } from "@/lib/privacy-core.mjs";
 
 const { getAssistantCatalog, getCategories, getCategoryTags, getProduct, fetchOrders } = vi.hoisted(() => ({
   getAssistantCatalog: vi.fn(),
@@ -154,7 +155,9 @@ describe("getMyOrders", () => {
     const { getMyOrders } = createAssistantTools({ userId: "user_123" });
     const result = await run(getMyOrders, {});
 
-    expect(fetchOrders).toHaveBeenCalledWith(expect.anything(), { userId: "user_123" });
+    // The query is keyed by the pseudonym, never the raw user id.
+    const key = createPseudonyms(process.env.ORDER_ID_SECRET).userKey("user_123");
+    expect(fetchOrders).toHaveBeenCalledWith(expect.anything(), { userKey: key });
     expect(result).toEqual({
       signedIn: true,
       orders: [

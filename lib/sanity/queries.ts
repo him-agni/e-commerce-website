@@ -76,14 +76,14 @@ export const VARIANTS_BY_SKU_QUERY = defineQuery(`*[_type == "product" && count(
   "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }
 }`);
 
-export const ORDERS_BY_USER_QUERY = defineQuery(`*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {
+export const ORDERS_BY_USER_QUERY = defineQuery(`*[_type == "order" && customer->userKey == $userKey] | order(createdAt desc) {
   _id,
   orderNumber,
   status,
   total,
   createdAt,
   items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },
-  stripeSessionId
+  sessionRef
 }`);
 
 // Compact view of the whole catalog for the shopping assistant's search (small catalog, ranked in code).

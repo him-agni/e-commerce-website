@@ -49,7 +49,7 @@ export type Order = {
   }>;
   total?: number;
   status: "paid" | "shipped" | "delivered" | "cancelled";
-  stripeSessionId?: string;
+  sessionRef?: string;
   createdAt?: string;
 };
 
@@ -59,8 +59,7 @@ export type Customer = {
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
-  clerkUserId: string;
-  stripeCustomerId?: string;
+  userKey: string;
 };
 
 export type SanityImageAssetReference = {
@@ -492,7 +491,7 @@ export type VARIANTS_BY_SKU_QUERY_RESULT = Array<{
 
 // Source: lib/sanity/queries.ts
 // Variable: ORDERS_BY_USER_QUERY
-// Query: *[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {  _id,  orderNumber,  status,  total,  createdAt,  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },  stripeSessionId}
+// Query: *[_type == "order" && customer->userKey == $userKey] | order(createdAt desc) {  _id,  orderNumber,  status,  total,  createdAt,  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },  sessionRef}
 export type ORDERS_BY_USER_QUERY_RESULT = Array<{
   _id: string;
   orderNumber: string;
@@ -507,7 +506,7 @@ export type ORDERS_BY_USER_QUERY_RESULT = Array<{
     quantity: number | null;
     productSlug: string | null;
   }> | null;
-  stripeSessionId: string | null;
+  sessionRef: string | null;
 }>;
 
 // Source: lib/sanity/queries.ts
@@ -587,7 +586,7 @@ declare global {
     '*[_type == "product" && defined(slug.current)].slug.current': PRODUCT_SLUGS_QUERY_RESULT;
     '*[_type == "category" && defined(slug.current)].slug.current': CATEGORY_SLUGS_QUERY_RESULT;
     '*[_type == "product" && count(variants[sku in $skus]) > 0] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "variants": variants[sku in $skus] { _key, sku, color, size, design, price, stock, image }\n}': VARIANTS_BY_SKU_QUERY_RESULT;
-    '*[_type == "order" && customer->clerkUserId == $userId] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  status,\n  total,\n  createdAt,\n  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },\n  stripeSessionId\n}': ORDERS_BY_USER_QUERY_RESULT;
+    '*[_type == "order" && customer->userKey == $userKey] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  status,\n  total,\n  createdAt,\n  items[] { _key, productName, variantLabel, unitPrice, quantity, "productSlug": product->slug.current },\n  sessionRef\n}': ORDERS_BY_USER_QUERY_RESULT;
     '*[_type == "product"] | order(name asc) {\n  _id,\n  name,\n  "slug": slug.current,\n  description,\n  material,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0,\n  "colors": array::unique(variants[defined(color)].color),\n  "sizes": array::unique(variants[defined(size)].size),\n  "designs": array::unique(variants[defined(design)].design)\n}': ASSISTANT_CATALOG_QUERY_RESULT;
     '*[_type == "category" && defined(slug.current)] | order(order asc) {\n  _id,\n  title,\n  "slug": slug.current,\n  "tags": array::unique(*[_type == "product" && references(^._id)].tags[])\n}': CATEGORY_TAGS_QUERY_RESULT;
     '*[_type == "product" && slug.current in $slugs] {\n  _id,\n  name,\n  "slug": slug.current,\n  "image": images[0],\n  "category": category->{ title, "slug": slug.current },\n  tags,\n  "minPrice": math::min(variants[].price),\n  "maxPrice": math::max(variants[].price),\n  "inStock": count(variants[stock > 0]) > 0\n}': PRODUCTS_BY_SLUGS_QUERY_RESULT;

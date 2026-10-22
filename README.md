@@ -57,6 +57,7 @@ The Studio is at http://localhost:3000/studio. In the Sanity dashboard, add `htt
 | `STRIPE_WEBHOOK_SECRET` | printed by `stripe listen` (below) or your Stripe webhook endpoint | recording orders |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | aistudio.google.com/apikey | the assistant |
 | `UNSPLASH_ACCESS_KEY` | unsplash.com/developers | the seed script only |
+| `ORDER_ID_SECRET` | make one: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` (32+ characters). **Never change it once orders exist.** | keeps real user and Stripe ids out of the public dataset |
 | `SANITY_REVALIDATE_SECRET` | any random string (16+ characters) | live refresh after deploy |
 | `NEXT_PUBLIC_SITE_URL` | your site's public URL | canonical links, sitemap, Stripe redirects |
 

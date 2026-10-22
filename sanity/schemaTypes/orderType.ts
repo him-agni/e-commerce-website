@@ -6,7 +6,7 @@ export const orderType = defineType({
   type: "document",
   description:
     "This dataset is publicly readable, so no personal details are stored on orders. " +
-    "The shipping address and email live in Stripe, looked up by Stripe session id when needed.",
+    "The shipping address and email live in Stripe; the server finds them with the encrypted session reference below.",
   fields: [
     defineField({
       name: "orderNumber",
@@ -65,7 +65,13 @@ export const orderType = defineType({
       },
       validation: (rule) => rule.required(),
     }),
-    defineField({ name: "stripeSessionId", type: "string" }),
+    defineField({
+      name: "sessionRef",
+      title: "Stripe session (encrypted)",
+      description: "The Stripe Checkout session id, encrypted by the server. Not readable or editable here.",
+      type: "string",
+      readOnly: true,
+    }),
     defineField({ name: "createdAt", type: "datetime" }),
   ],
   orderings: [

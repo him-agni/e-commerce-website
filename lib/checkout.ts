@@ -81,7 +81,7 @@ export async function createCheckoutSession({
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    // Gives the webhook a Stripe customer id to store on the Sanity customer.
+    // Creates a Stripe customer for the buyer, so the owner can find their payments in the Stripe dashboard.
     customer_creation: "always",
     line_items: lines.map((line) => {
       const variant = variants.get(line.sku)!;

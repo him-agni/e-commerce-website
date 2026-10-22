@@ -17,6 +17,7 @@ Dashboards change their labels from time to time; where a menu name below does n
 3. Before the first deploy, open **Environment Variables** and add every value from your `.env.local` (names in [README.md](../README.md#environment-variables)), except:
    - `STRIPE_WEBHOOK_SECRET`: leave it for step 3. The deployed site gets its own secret.
    - `NEXT_PUBLIC_SITE_URL`: you do not know it yet; set it in step 2.
+   - `ORDER_ID_SECRET`: a random string of 32+ characters (`node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`). Set it **before the first deploy** and keep a copy somewhere safe. It turns Clerk user ids and Stripe session ids into the stand-ins stored in the public Sanity dataset. If you change or lose it, every existing order stops matching its owner, so treat it like a password you can never rotate.
    - `SANITY_REVALIDATE_SECRET`: set it now to a long random string you make up (16+ characters) and keep a copy; you need the same value in step 4.
 4. Click **Deploy**. Vercel gives you a URL such as `https://my-farmhouse-xxxx.vercel.app`.
 
@@ -86,7 +87,19 @@ After the redeploys finish, walk through this on the deployed URL:
 
 ## Data privacy
 
-The Sanity dataset is public-read (the free plan only offers public datasets, and the storefront needs to read it). The project id is visible in the site's page source, so treat everything in Sanity as public. Order and customer records therefore hold identifiers only. Names, emails and shipping addresses stay in Stripe and Clerk. Do not add personal fields to the Sanity schemas. Sanity keeps document history for 3 days on the free plan, and that history is readable by anyone who knows a document id and a time, so anything written by mistake stays recoverable for those 3 days even after it is deleted.
+The Sanity dataset is public-read (the free plan only offers public datasets, and the storefront needs to read it). The project id is visible in the site's page source, so treat everything in Sanity as public. Do not add personal fields to the Sanity schemas.
+
+What a stranger can read about orders today: the order number, what was bought, prices, the total, the date and the status, plus two opaque values. Nothing in it names a person, and nothing in it is a real Clerk or Stripe identifier:
+
+| Stored in Sanity | Instead of | How |
+| --- | --- | --- |
+| `userKey` (customer document id and field) | the Clerk user id | a keyed one-way hash made with `ORDER_ID_SECRET`; the same user always gets the same key, so My orders can find their orders |
+| order document id and order number | the Stripe session id | the same kind of hash |
+| `sessionRef` | the Stripe session id | encrypted (AES-256-GCM) with a key derived from `ORDER_ID_SECRET`; only the server can read it, to ask Stripe for the shipping address |
+
+Names, emails and shipping addresses stay in Stripe and Clerk. The code that does this is `lib/privacy-core.mjs`; its tests are in `tests/lib/privacy-core.test.ts` and `tests/lib/orders.test.ts`.
+
+**Limits to know about.** Anyone can still see purchase amounts, items and dates, and that some orders share one anonymous customer key. Keep `ORDER_ID_SECRET` private: with it, someone who also knew a Clerk user id could confirm which orders were theirs. Never change it, or existing orders stop matching their owners. Sanity keeps document history for 3 days on the free plan, and that history is readable by anyone who knows a document id and a time, so anything written by mistake stays recoverable for those 3 days even after it is deleted; the same applies to the old identifiers replaced when this scheme was introduced (2026-10-22).
 
 ## Free-tier limits
 
@@ -110,6 +123,7 @@ Sources: [Vercel plans](https://vercel.com/docs/plans/hobby), [Sanity pricing](h
 | Paid, but no order and stock unchanged | Stripe webhook missing, wrong URL, or `STRIPE_WEBHOOK_SECRET` is the local one. Check the endpoint's delivery log in Stripe. |
 | Webhook delivery shows `400` | The signing secret in Vercel does not match the endpoint's secret. |
 | Webhook delivery shows `500` | Check the Vercel function logs; Stripe retries automatically, and recording an order is safe to repeat. |
+| Webhook `500` and the logs mention `ORDER_ID_SECRET` | The variable is missing or shorter than 32 characters in Vercel. Add it and redeploy; Stripe's retry then records the order. |
 | Edits in Studio take a minute to appear | The Sanity refresh webhook is missing or its secret differs. |
 | Studio says it cannot connect | The site URL is not in Sanity's CORS origins (with credentials). |
 | Sign-in loops or "handshake" errors | A truncated or masked `CLERK_SECRET_KEY`. Run `npm run check-env`. |

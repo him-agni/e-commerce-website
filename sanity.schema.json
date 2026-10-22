@@ -214,7 +214,7 @@
         },
         "optional": false
       },
-      "stripeSessionId": {
+      "sessionRef": {
         "type": "objectAttribute",
         "value": {
           "type": "string"
@@ -265,19 +265,12 @@
           "type": "string"
         }
       },
-      "clerkUserId": {
+      "userKey": {
         "type": "objectAttribute",
         "value": {
           "type": "string"
         },
         "optional": false
-      },
-      "stripeCustomerId": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "string"
-        },
-        "optional": true
       }
     }
   },
