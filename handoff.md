@@ -58,7 +58,7 @@ _Last updated: 2026-10-22 (security and privacy hardening)_
 ## Waiting on the user
 0. **Back up `ORDER_ID_SECRET`** (value is in `.env.local`; on Vercel it is a sensitive variable that cannot be read back). Store it in a password manager. If it is lost or changed, existing orders stop matching their owners. Never print or commit it.
 0. In GitHub, Settings > Advanced Security: keep Dependabot **alerts** on (notifications only) and **security updates** off, so no bot ever commits to the repo.
-0. Optional: in the Clerk dashboard, turn off test mode for the development instance if the setting is available (it also affects `+clerk_test` addresses), and consider enabling its breached-password check. Neither was applied by the assistant.
+0. Optional: in the Clerk dashboard, turn off test mode for the development instance if the setting is available (it also affects `+clerk_test` addresses). The breached-password check is already on, and the assistant did not change any Clerk instance setting.
 1. (done) Live sign-in and test purchase verified.
 2. Confirm or change the brand look.
 3. Skim the Unsplash photos in the Studio and swap mismatches (edits go live in seconds via the Sanity webhook).
