@@ -1,5 +1,7 @@
 # My Farmhouse
 
+[![CI](https://github.com/him-agni/e-commerce-website/actions/workflows/ci.yml/badge.svg)](https://github.com/him-agni/e-commerce-website/actions/workflows/ci.yml) [![End-to-end](https://github.com/him-agni/e-commerce-website/actions/workflows/e2e.yml/badge.svg)](https://github.com/him-agni/e-commerce-website/actions/workflows/e2e.yml)
+
 A modern farmhouse furniture store built as a portfolio project. Browse a catalog of 60 products in 9 categories, pick a color, size and design, pay with Stripe (test mode), and ask an AI shopping assistant.
 <img width="1608" height="962" alt="image" src="https://github.com/user-attachments/assets/501c6d5a-08b1-44ce-90ea-c15a2b38610b" />
 Link: https://my-farmhouse-pi.vercel.app/
