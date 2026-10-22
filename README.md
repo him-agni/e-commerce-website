@@ -1,6 +1,7 @@
 # My Farmhouse
 
 A modern farmhouse furniture store built as a portfolio project. Browse a catalog of 60 products in 9 categories, pick a color, size and design, pay with Stripe (test mode), and ask an AI assistant for help choosing.
+<img width="1608" height="962" alt="image" src="https://github.com/user-attachments/assets/501c6d5a-08b1-44ce-90ea-c15a2b38610b" />
 
 **Nothing here takes real money.** Stripe runs in test mode only, and the app refuses a live Stripe key.
 
