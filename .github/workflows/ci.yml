@@ -23,6 +23,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Fails only on critical advisories in what ships; the remaining known ones sit in Sanity's CLI tooling (see README).
+      - run: npm audit --omit=dev --audit-level=critical
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:coverage
