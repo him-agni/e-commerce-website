@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { POST } from "@/app/api/chat/route";
 
 const { auth, streamText, createAssistantTools } = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -27,15 +28,12 @@ function chat(body: unknown, headers: Record<string, string> = {}) {
 }
 
 describe("POST /api/chat", () => {
-  let POST: (request: Request) => Promise<Response>;
-
-  beforeEach(async () => {
+  beforeEach(() => {
     [auth, streamText, createAssistantTools].forEach((m) => m.mockReset());
     auth.mockResolvedValue({ userId: null });
     createAssistantTools.mockReturnValue({});
     streamText.mockReturnValue({ stream: new ReadableStream({ start: (c) => c.close() }) });
     vi.spyOn(console, "error").mockImplementation(() => {});
-    ({ POST } = await import("@/app/api/chat/route"));
   });
 
   it.each([
