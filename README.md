@@ -125,6 +125,18 @@ On GitHub, `.github/workflows/ci.yml` runs lint, types and the unit tests on eve
 
 To check that the tests can actually fail, nine safeguards were broken on purpose (removing the stock check, the duplicate-order check, signature verification, the cart cap, and so on) to confirm the tests fail when they should. Automated accessibility checks find only some problems, so keyboard and screen-reader use still deserve a manual pass.
 
+## Security and privacy
+
+Built for a demo, so the aim is to protect what could be misused and be honest about what is left.
+
+- **Money and orders.** Prices and stock are decided on the server; the browser only sends SKUs and quantities. Stripe webhooks are verified by signature and are safe to repeat, so an order cannot be double-counted. Stripe runs in test mode only, and the app refuses a live key.
+- **Personal data.** Names, emails and shipping addresses never reach the public Sanity dataset. Neither do the real Clerk user id or Stripe session id: they are replaced by keyed hashes, and the session id is stored encrypted so only the server can look up a shipping address. Details and limits are in [docs/deploy.md](docs/deploy.md#data-privacy). The site has a privacy page (`/privacy`), and the assistant says up front that replies come from Google's free-tier Gemini.
+- **Browser hardening.** Every response sends `nosniff`, a strict referrer policy, a permissions policy and `X-Frame-Options`. Production pages also carry a Content-Security-Policy that names only the origins the site uses ([lib/security-headers.ts](lib/security-headers.ts)); an end-to-end test fails if it ever blocks something the site needs.
+- **Abuse limits.** The assistant is rate limited, validates its input, and drops any system message sent from the browser. Replies are rendered without raw HTML and only same-site links are clickable.
+- **Dependencies.** Dependabot opens weekly updates, and CI fails on any critical advisory. Today `npm audit` still lists 16 issues in what ships, all of them inside Sanity's CLI and code-generation tooling (`braces`, `sprintf-js` and one `js-yaml` advisory have no published fix). None of that code handles visitor input, and the only fix offered is a breaking Sanity downgrade.
+
+**Known limits.** Sign-in runs on Clerk's development instance (a custom domain is needed for a production one), which is weaker than production and shows a development badge. Purchase amounts, items and dates are still readable in the public dataset, just not linked to a person. The assistant's rate limiter lives in memory, so it resets when a server instance restarts. The Gemini free tier lets Google review conversations; the chat warns users.
+
 ## How it fits together
 
 - **Sanity is the database, and it is publicly readable.** Products (with variants and designs), categories, customers and orders live in one dataset, and anyone who knows the project id (it is in the site's page source) can read it without logging in. So **no personal data is stored there**: orders hold only the order number, items, totals, status and the Clerk and Stripe ids. Names, emails and shipping addresses stay in Stripe, and the My orders page looks the address up there for the signed-in owner. Prices are whole US cents.
